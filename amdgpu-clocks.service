@@ -1,0 +1,12 @@
+[Unit]
+Description=Set custom amdgpu clocks & voltages
+After=rc-local.service plymouth-start.service systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/amdgpu-clocks
+RemainAfterExit=yes
+StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target sleep.target suspend.target hibernate.target

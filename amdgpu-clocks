@@ -1,0 +1,114 @@
+#!/bin/bash
+
+USER_STATES_PATH=${USER_STATES_PATH:-/etc/default/amdgpu-custom-state}
+SYS_PPFMASK=/sys/module/amdgpu/parameters/ppfeaturemask
+[ ! -r ${SYS_PPFMASK} ] && echo "Can't access ${SYS_PPFMASK}" && exit 2
+
+function check_ppfeaturemask() {
+  CURRENT_INT10_MASK=$(cat ${SYS_PPFMASK})
+  CURRENT_MASK=$(/usr/bin/printf "%x\n" ${CURRENT_INT10_MASK})
+  [ "x${CURRENT_MASK}" = "xffffffff" ] && return 0
+  echo -n "In order to set custom amdgpu power states, boot the machine with "
+  echo    "amdgpu.ppfeaturemask=0xffffffff kernel option" && exit 2
+}
+
+function fill_sclks() {
+  echo "  SCLK state ${1}: ${2}, ${3}"
+  SCLK[${1}]="s ${1} ${2%*MHz} ${3%*mV}"
+}
+
+function fill_mclks() {
+  echo "  MCLK state $1: ${2}, ${3}"
+  MCLK[${1}]="m ${1} ${2%*MHz} ${3%*mV}"
+}
+
+function parse_states() {
+  mapfile -t STATE_LINES < $1
+  for LNNO in "${!STATE_LINES[@]}"; do
+    LINE="${STATE_LINES[$LNNO]}"
+    case ${LINE} in
+      "OD_SCLK:")
+        state_fill_func=fill_sclks ;;
+      "OD_MCLK:")
+        state_fill_func=fill_mclks ;;
+      "OD_RANGE:")
+        echo "  Maximum clocks & voltages:";;
+      "SCLK: "*)
+        echo "    SCLK clock ${LINE##* }"
+        MAX_SCLK=${LINE##* }
+        MAX_SCLK=${MAX_SCLK%*MHz}
+        ;;
+      "MCLK: "*)
+        echo "    MCLK clock ${LINE##* }"
+        MAX_MCLK=${LINE##* }
+        MAX_MCLK=${MAX_MCLK%*MHz}
+        ;;
+      "VDDC: "*)
+        echo "    VDDC voltage ${LINE##* }"
+        MAX_VDDC=${LINE##* }
+        MAX_VDDC=${MAX_VDDC%*mV}
+        ;;
+      [0-9]": "*)
+        $state_fill_func ${LINE%%:*} ${LINE#* }
+        ;;
+      "FORCE_SCLK: "[0-9]*)
+        echo "  Force SCLK state to ${LINE#* }"
+        FORCE_SCLK=${LINE#* }
+        ;;
+      "FORCE_MCLK: "[0-9]*)
+        echo "  Force MCLK state to ${LINE#* }"
+        FORCE_MCLK=${LINE#* }
+        ;;
+      "FORCE_PERF_LEVEL: "[a-z]*)
+        echo "  Force performance level to ${LINE#* }"
+        FORCE_LEVEL=${LINE#* }
+        ;;
+      "#"*) ;;
+      "") ;;
+      *)
+        let "LINE_NUMBER = ${LNNO} + 1"
+        echo "  Unexpected value in ${1}:${LINE_NUMBER}"
+        exit 2
+        ;;
+    esac
+  done
+}
+
+function set_custom_states() {
+  if [ "${FORCE_LEVEL}" ]; then
+    echo ${FORCE_LEVEL} > ${PWR_LEVEL}
+  fi
+  for CSTATE in "${SCLK[@]}"; do
+    echo ${CSTATE} > ${SYS_PP_OD_CLK}
+  done
+  for MSTATE in "${MCLK[@]}"; do
+    echo ${MSTATE} > ${SYS_PP_OD_CLK}
+  done
+  echo 'c' > ${SYS_PP_OD_CLK}
+  if [ "${FORCE_SCLK}" ]; then
+    echo ${FORCE_SCLK} > ${SYS_DPM_SCLK}
+  fi
+  if [ "${FORCE_MCLK}" ]; then
+    echo ${FORCE_MCLK} > ${SYS_DPM_MCLK}
+  fi
+}
+
+check_ppfeaturemask
+
+for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
+  SYS_PP_OD_CLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_od_clk_voltage
+  PWR_LEVEL=/sys/class/drm/${USER_STATE_FILE##*.}/device/power_dpm_force_performance_level
+  SYS_DPM_SCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_sclk
+  SYS_DPM_MCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_mclk
+  if [ -f ${SYS_PP_OD_CLK} ]; then
+    echo "Detecting the state values at ${SYS_PP_OD_CLK}:"
+    parse_states ${SYS_PP_OD_CLK}
+    echo "Verifying user state values at ${USER_STATE_FILE}:"
+    parse_states ${USER_STATE_FILE}
+    echo "Committing custom states to ${SYS_PP_OD_CLK}:"
+    echo "  Done"
+    set_custom_states
+  else
+    echo "WARNING: ${SYS_PP_OD_CLK} does not exist, skipping!"
+  fi
+done
