@@ -66,7 +66,7 @@ and specify custom power states in `/etc/default/radeon-custom-states.card0`:
     Verifying user state values at radeon-custom-states.card0:
       SCLK state 6: 1000MHz, 860mV
       SCLK state 7: 1050MHz, 890mV
-      MCLK state 2: 1600MHz, 000mV
+      MCLK state 2: 1600MHz, 900mV
       Force SCLK state to 5 6 7
       Force MCLK state to 2
       Force performance level to manual
@@ -78,7 +78,7 @@ a directory, case trailing slash is supplied), for example:
 
     $ sudo USER_STATES_PATH=custom-states amdgpu-clocks
 
-This will load and apply custom states from all **custom-states.card\*** files
+This will load and apply custom states from all `custom-states.card*` files
 in the current directory.
 
 ### Making the custom power states persist
