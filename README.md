@@ -44,7 +44,7 @@ Here is an example how custom power state definition file may look like:
 ### Installing and manually running the script
 
 Simply place the [script](amdgpu-clocks) in `/usr/bin/amdgpu-clocks`,
-and specify custom power states in `/etc/default/radeon-custom-states.card0`:
+and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
 
     # amdgpu-clocks
     Detecting the state values at /sys/class/drm/card0/device/pp_od_clk_voltage:
