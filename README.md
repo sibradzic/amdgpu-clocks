@@ -25,7 +25,7 @@ of a card (which can be `auto`, `low`, `high`, `manual`, etc).
 
 Here is an example how custom power state definition file may look like:
 
-    $ cat /etc/default/radeon-custom-states.card0
+    $ cat /etc/default/amdgpu-custom-states.card0
     # Set custom GPU states 6 & 7:
     OD_SCLK:
     6:       1000MHz        860mV
@@ -63,7 +63,7 @@ and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
         SCLK clock 2000MHz
         MCLK clock 2250MHz
         VDDC voltage 1150mV
-    Verifying user state values at radeon-custom-states.card0:
+    Verifying user state values at amdgpu-custom-states.card0:
       SCLK state 6: 1000MHz, 860mV
       SCLK state 7: 1050MHz, 890mV
       MCLK state 2: 1600MHz, 900mV
