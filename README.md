@@ -3,13 +3,18 @@
 ### Introduction
 
 This is a simple script that can be used to set custom power states for recent
-AMD GPUs that are driven by **amdgpu** or **amdgpu-pro** Linux drivers. The
-script is able to set custom clocks, voltages and some other power states,
-assuming that **amdgpu.ppfeaturemask=0xffffffff** kernel option is being set,
-which in turn enables amdgpu driver sysfs API that allows fine grain control of
-GPU power states (GPU & VRAM clocks & voltages, depending on actual hardware).
-It should work on Polaris (well tested) and Vega cards, and it can be used to
-easily manage multiple cards.
+AMD GPUs that are driven by **amdgpu** Linux kernel driver. The script is able
+to set custom clocks, voltages and some other power states, assuming that
+Radeon OverDrive is enabled in the driver. The OverDrive is not enabled by
+default as of Linux 5.0, it can be enabled by setting 14th bit (0x4000) of a
+**ppfeaturemask** amdgpu driver to 1. For example, setting
+**amdgpu.ppfeaturemask=0xfffd7fff** or **amdgpu.ppfeaturemask=0xffffffff**
+kernel boot option will do the trick. This would enable amdgpu driver sysfs
+API that allows fine grain control of GPU power states (GPU & VRAM clocks &
+voltages, depending on actual hardware).
+It should work on Polaris (well tested) and Vega cards (unfortunately, Raven
+Ridge APU does not expose this API), and it can be used to easily manage
+multiple AMD graphics cards.
 
 ### How does it work
 

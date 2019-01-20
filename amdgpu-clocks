@@ -6,10 +6,12 @@ SYS_PPFMASK=/sys/module/amdgpu/parameters/ppfeaturemask
 
 function check_ppfeaturemask() {
   CURRENT_INT10_MASK=$(cat ${SYS_PPFMASK})
-  CURRENT_MASK=$(/usr/bin/printf "%x\n" ${CURRENT_INT10_MASK})
-  [ "x${CURRENT_MASK}" = "xffffffff" ] && return 0
+  # 0x4000 or 14th bit is one indicating if OverDrive has been enabled
+  OVERDRIVE_MASK=$(printf '%#x' "$(($CURRENT_INT10_MASK & 0x4000))")
+  [ "x${OVERDRIVE_MASK}" == "x0x4000" ] && return 0
   echo -n "In order to set custom amdgpu power states, boot the machine with "
-  echo    "amdgpu.ppfeaturemask=0xffffffff kernel option" && exit 2
+  echo -n "amdgpu.ppfeaturemask=0xfffd7fff or amdgpu.ppfeaturemask=0xffffffff "
+  echo    "kernel option" && exit 2
 }
 
 function fill_sclks() {
