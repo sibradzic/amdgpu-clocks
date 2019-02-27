@@ -16,12 +16,17 @@ function check_ppfeaturemask() {
 
 function fill_sclks() {
   echo "  SCLK state ${1}: ${2}, ${3}"
-  SCLK[${1}]="s ${1} ${2%*MHz} ${3%*mV}"
+  SCLK[${1}]="s ${1} ${2%*M[Hh]z} ${3%*mV}"
 }
 
 function fill_mclks() {
   echo "  MCLK state $1: ${2}, ${3}"
-  MCLK[${1}]="m ${1} ${2%*MHz} ${3%*mV}"
+  MCLK[${1}]="m ${1} ${2%*M[Hh]z} ${3%*mV}"
+}
+
+function fill_vddccurve() {
+  echo "  VDDC Curve state $1: ${2}, ${3}"
+  VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${3%*mV}"
 }
 
 function parse_states() {
@@ -33,17 +38,23 @@ function parse_states() {
         state_fill_func=fill_sclks ;;
       "OD_MCLK:")
         state_fill_func=fill_mclks ;;
+      "OD_VDDC_CURVE:")
+        state_fill_func=fill_vddccurve ;;
+      "VDDC_CURVE_SCLK["[012]"]: "*)
+        ;; # Just ignoring these for now
+      "VDDC_CURVE_VOLT["[012]"]: "*)
+        ;; # Just ignoring these for now
       "OD_RANGE:")
         echo "  Maximum clocks & voltages:";;
       "SCLK: "*)
         echo "    SCLK clock ${LINE##* }"
         MAX_SCLK=${LINE##* }
-        MAX_SCLK=${MAX_SCLK%*MHz}
+        MAX_SCLK=${MAX_SCLK%*M[Hh]z}
         ;;
       "MCLK: "*)
         echo "    MCLK clock ${LINE##* }"
         MAX_MCLK=${LINE##* }
-        MAX_MCLK=${MAX_MCLK%*MHz}
+        MAX_MCLK=${MAX_MCLK%*M[Hh]z}
         ;;
       "VDDC: "*)
         echo "    VDDC voltage ${LINE##* }"
@@ -85,6 +96,9 @@ function set_custom_states() {
   done
   for MSTATE in "${MCLK[@]}"; do
     echo ${MSTATE} > ${SYS_PP_OD_CLK}
+  done
+  for VDDC_CURVE_STATE in "${VDDC_CURVE[@]}"; do
+    echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}
   done
   echo 'c' > ${SYS_PP_OD_CLK}
   if [ "${FORCE_SCLK}" ]; then
