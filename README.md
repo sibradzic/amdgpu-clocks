@@ -25,7 +25,7 @@ actual `/sys/class/drm/cardX/device/pp_od_clk_voltage`, with option to add
 newlines, comments (lines starting with `#`) and three extra parameters, used
 to set extra power state details. These are **FORCE_SCLK** & **FORCE_MCLK**,
 that can be used to limit GPU and memory power states to a particular subset of
-states, and **FORCE_LEVEL**, that can be used to force desired `power_dpm_force_performance_level`
+states, and **FORCE_PERF_LEVEL**, that can be used to force desired `power_dpm_force_performance_level`
 of a card (which can be `auto`, `low`, `high`, `manual`, etc).
 
 Here is an example how custom power state definition file may look like:
@@ -44,7 +44,7 @@ Here is an example how custom power state definition file may look like:
     # Force fixed memory state:
     FORCE_MCLK: 2
     # In order to allow FORCE_SCLK & FORCE_MCLK:
-    FORCE_LEVEL: manual
+    FORCE_PERF_LEVEL: manual
 
 ### Installing and manually running the script
 
