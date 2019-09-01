@@ -72,6 +72,10 @@ function parse_states() {
         echo "  Force MCLK state to ${LINE#* }"
         FORCE_MCLK=${LINE#* }
         ;;
+      "FORCE_POWER_CAP: "[0-9]*)
+        echo "  Force power cap to ${LINE#* }"
+        FORCE_POWER_CAP=${LINE#* }
+        ;;
       "FORCE_PERF_LEVEL: "[a-z]*)
         echo "  Force performance level to ${LINE#* }"
         FORCE_LEVEL=${LINE#* }
@@ -85,6 +89,10 @@ function parse_states() {
         ;;
     esac
   done
+  if [ "$1" == "${SYS_PP_OD_CLK}" ]; then
+    POWER_LIMIT=$(cat $PWR_CAP_FILE)
+    echo "  Curent power cap: ${POWER_LIMIT%*000000}W"
+  fi
 }
 
 function set_custom_states() {
@@ -107,6 +115,9 @@ function set_custom_states() {
   if [ "${FORCE_MCLK}" ]; then
     echo ${FORCE_MCLK} > ${SYS_DPM_MCLK}
   fi
+  if [ "${FORCE_POWER_CAP}" ]; then
+    echo ${FORCE_POWER_CAP} > ${PWR_CAP_FILE}
+  fi
 }
 
 check_ppfeaturemask
@@ -116,6 +127,9 @@ for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
   PWR_LEVEL=/sys/class/drm/${USER_STATE_FILE##*.}/device/power_dpm_force_performance_level
   SYS_DPM_SCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_sclk
   SYS_DPM_MCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_mclk
+  HWMON_PATH=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon
+  HWMON_ID=$(ls -1 /sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon)
+  PWR_CAP_FILE=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon/${HWMON_ID}/power1_cap
   if [ -f ${SYS_PP_OD_CLK} ]; then
     echo "Detecting the state values at ${SYS_PP_OD_CLK}:"
     parse_states ${SYS_PP_OD_CLK}

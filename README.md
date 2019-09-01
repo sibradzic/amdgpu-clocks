@@ -24,9 +24,11 @@ card in `/sys/class/drm/cardX`. The custom state files have same format as the
 actual `/sys/class/drm/cardX/device/pp_od_clk_voltage`, with option to add
 newlines, comments (lines starting with `#`) and three extra parameters, used
 to set extra power state details. These are **FORCE_SCLK** & **FORCE_MCLK**,
-that can be used to limit GPU and memory power states to a particular subset of
-states, and **FORCE_PERF_LEVEL**, that can be used to force desired `power_dpm_force_performance_level`
-of a card (which can be `auto`, `low`, `high`, `manual`, etc).
+that can be used to limit GPU and memory power states to a particular subset
+of states, **FORCE_POWER_CAP** that cam be used to set desired power cap, and
+**FORCE_PERF_LEVEL** that can be used to force desired
+`power_dpm_force_performance_level` of a card (which can be `auto`, `low`,
+`high`, `manual`, etc).
 
 Here is an example how custom power state definition file may look like:
 
@@ -43,6 +45,8 @@ Here is an example how custom power state definition file may look like:
     FORCE_SCLK: 5 6 7
     # Force fixed memory state:
     FORCE_MCLK: 2
+    # Force power limit (in micro watts):
+    FORCE_POWER_CAP: 90000000
     # In order to allow FORCE_SCLK & FORCE_MCLK:
     FORCE_PERF_LEVEL: manual
 
@@ -68,12 +72,14 @@ and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
         SCLK clock 2000MHz
         MCLK clock 2250MHz
         VDDC voltage 1150mV
+      Curent power cap: 87W
     Verifying user state values at amdgpu-custom-states.card0:
       SCLK state 6: 1000MHz, 860mV
       SCLK state 7: 1050MHz, 890mV
       MCLK state 2: 1600MHz, 900mV
       Force SCLK state to 5 6 7
       Force MCLK state to 2
+      Force power cap to 90000000
       Force performance level to manual
     Committing custom states to /sys/class/drm/card0/device/pp_od_clk_voltage:
       Done
