@@ -98,7 +98,7 @@ This can be achieved by placing provided *systemd* service
 [file](amdgpu-clocks.service) in `/lib/systemd/system/` directory,
 and enable it:
 
-    # systemctl enable amdgpu-clocks
+    # systemctl enable --now amdgpu-clocks
 
 Of course, one should not forget to place the actual custom power states in
 `/etc/default/amdgpu-custom-state.cardX`.
