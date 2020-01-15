@@ -55,7 +55,7 @@ Here is an example how custom power state definition file may look like:
 Simply place the [script](amdgpu-clocks) in `/usr/bin/amdgpu-clocks`,
 and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
 
-    # amdgpu-clocks
+    $ sudo amdgpu-clocks
     Detecting the state values at /sys/class/drm/card0/device/pp_od_clk_voltage:
       SCLK state 0: 300MHz, 750mV
       SCLK state 1: 500MHz, 775mV
@@ -98,7 +98,7 @@ This can be achieved by placing provided *systemd* service
 [file](amdgpu-clocks.service) in `/lib/systemd/system/` directory,
 and enable it:
 
-    # systemctl enable amdgpu-clocks
+    $ sudo systemctl enable --now amdgpu-clocks
 
 Of course, one should not forget to place the actual custom power states in
 `/etc/default/amdgpu-custom-state.cardX`.
