@@ -15,18 +15,28 @@ function check_ppfeaturemask() {
 }
 
 function fill_sclks() {
-  echo "  SCLK state ${1}: ${2}, ${3}"
-  SCLK[${1}]="s ${1} ${2%*M[Hh]z} ${3%*mV}"
+  if [ -z "${3}" ]; then     # Vega20 and later ASICs
+    echo "  SCLK state ${1}: ${2}"
+    SCLK[${1}]="s ${1} ${2%*M[Hh]z}"
+  else                       # Vega10 and previous ASICs
+    echo "  SCLK state ${1}: ${2}, ${3}"
+    SCLK[${1}]="s ${1} ${2%*M[Hh]z} ${3%*mV}"
+  fi
 }
 
 function fill_mclks() {
-  echo "  MCLK state $1: ${2}, ${3}"
-  MCLK[${1}]="m ${1} ${2%*M[Hh]z} ${3%*mV}"
+  if [ -z "${3}" ]; then     # Vega20 and later ASICs
+    echo "  MCLK state ${1}: ${2}"
+    SCLK[${1}]="m ${1} ${2%*M[Hh]z}"
+  else                       # Vega10 and previous ASICs
+    echo "  MCLK state ${1}: ${2}, ${3}"
+    SCLK[${1}]="m ${1} ${2%*M[Hh]z} ${3%*mV}"
+  fi
 }
 
 function fill_vddccurve() {
-  echo "  VDDC Curve state $1: ${2}, ${3}"
-  VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${3%*mV}"
+  echo "  VDDC Curve state $1: ${2}, ${4}"
+  VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${4%*mV}"
 }
 
 function parse_states() {
