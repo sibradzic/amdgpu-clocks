@@ -68,7 +68,10 @@ Here is an example how custom power state file may look like for Navi cards:
 
 ### Installing and manually running the script
 
-Simply place the [script](amdgpu-clocks) in `/usr/bin/amdgpu-clocks`,
+Simply place the [script](amdgpu-clocks) in `/usr/local/bin/amdgpu-clocks`:
+
+    sudo ln -s $(pwd)/amdgpu-clocks /usr/local/bin/amdgpu-clocks
+
 and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
 
     $ sudo amdgpu-clocks
@@ -117,6 +120,12 @@ This can be achieved by placing provided *systemd* service
 and enable it:
 
     $ sudo systemctl enable --now amdgpu-clocks
+
+However, if your system goes to suspend state, the above service will not
+auto-restart (due to RemainAfterExit parameter). To fix that copy provided
+[file](amdgpu-clocks-resume into `/usr/lib/systemd/system-sleep`
+
+    $ cp amdgpu-clocks-resume /usr/lib/systemd/system-sleep/
 
 Of course, one should not forget to place the actual custom power states in
 `/etc/default/amdgpu-custom-state.cardX`.
