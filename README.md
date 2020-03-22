@@ -123,7 +123,7 @@ and enable it:
 
 However, if your system goes to suspend state, the above service will not
 auto-restart (due to RemainAfterExit parameter). To fix that copy provided
-[file](amdgpu-clocks-resume into `/usr/lib/systemd/system-sleep`
+[file](amdgpu-clocks-resume) into `/usr/lib/systemd/system-sleep`
 
     $ cp amdgpu-clocks-resume /usr/lib/systemd/system-sleep/
 
