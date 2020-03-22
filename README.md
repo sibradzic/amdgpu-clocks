@@ -12,8 +12,8 @@ default as of Linux 5.0, it can be enabled by setting 14th bit (0x4000) of a
 kernel boot option will do the trick. This would enable amdgpu driver sysfs
 API that allows fine grain control of GPU power states (GPU & VRAM clocks &
 voltages, depending on actual hardware).
-It should work on Polaris (well tested) and Vega cards (unfortunately, Raven
-Ridge APU does not expose this API), and it can be used to easily manage
+It should work on Polaris, Vega (unfortunately Vega found on AMD APUs does
+not expose this API) and Navi cards, and it can be used to easily manage
 multiple AMD graphics cards.
 
 ### How does it work
@@ -30,7 +30,7 @@ of states, **FORCE_POWER_CAP** that can be used to set desired power cap, and
 `power_dpm_force_performance_level` of a card (which can be `auto`, `low`,
 `high`, `manual`, etc).
 
-Here is an example how custom power state definition file may look like:
+Here is an example how custom power state file may look like for Polaris cards:
 
     $ cat /etc/default/amdgpu-custom-states.card0
     # Set custom GPU states 6 & 7:
@@ -48,6 +48,22 @@ Here is an example how custom power state definition file may look like:
     # Force power limit (in micro watts):
     FORCE_POWER_CAP: 90000000
     # In order to allow FORCE_SCLK & FORCE_MCLK:
+    FORCE_PERF_LEVEL: manual
+
+Here is an example how custom power state file may look like for Navi cards:
+
+    # For Navi (and Radeon7) we can only set highest SCLK & MCLK, "state 1":
+    OD_SCLK:
+    1: 1550MHz
+    OD_MCLK:
+    1: 750MHz
+    # More fine-grain control of clocks and voltages are done with VDDC curve:
+    OD_VDDC_CURVE:
+    0: 800MHz @ 800mV
+    1: 1125MHz @ 820mV
+    2: 1550MHz @ 850mV
+    # Force power limit (in micro watts):
+    FORCE_POWER_CAP: 87000000
     FORCE_PERF_LEVEL: manual
 
 ### Installing and manually running the script
@@ -79,7 +95,7 @@ and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
       MCLK state 2: 1600MHz, 900mV
       Force SCLK state to 5 6 7
       Force MCLK state to 2
-      Force power cap to 90000000
+      Force power cap to 90W
       Force performance level to manual
     Committing custom states to /sys/class/drm/card0/device/pp_od_clk_voltage:
       Done
@@ -90,7 +106,9 @@ a directory, case trailing slash is supplied), for example:
     $ sudo USER_STATES_PATH=custom-states amdgpu-clocks
 
 This will load and apply custom states from all `custom-states.card*` files
-in the current directory.
+in the current directory. Script can also be used with an additional 'restore'
+parameter that can be used to restore all states to the initial defaults
+(states before script was executed for the first time).
 
 ### Making the custom power states persist
 
