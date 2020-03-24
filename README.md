@@ -111,7 +111,8 @@ a directory, case trailing slash is supplied), for example:
 This will load and apply custom states from all `custom-states.card*` files
 in the current directory. Script can also be used with an additional 'restore'
 parameter that can be used to restore all states to the initial defaults
-(states before script was executed for the first time).
+(states before script was executed for the first time), with exception of
+`pp_power_profile_mode` which will be set to 0.
 
 ### Making the custom power states persist
 
