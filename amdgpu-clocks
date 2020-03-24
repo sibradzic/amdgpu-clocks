@@ -4,7 +4,7 @@ USER_STATES_PATH=${USER_STATES_PATH:-/etc/default/amdgpu-custom-state}
 SYS_PPFMASK=/sys/module/amdgpu/parameters/ppfeaturemask
 [ ! -r ${SYS_PPFMASK} ] && echo "Can't access ${SYS_PPFMASK}" && exit 2
 
-if [ "x$1" == "xrestore" ]; then
+if [ "$1" == "restore" ]; then
   RESTORE=true
 fi
 
@@ -12,7 +12,7 @@ function check_ppfeaturemask() {
   CURRENT_HEX_MASK=$(printf '%#x' "$(( $(cat ${SYS_PPFMASK}) ))")
   # 0x4000 or 14th bit is one indicating if OverDrive has been enabled
   OVERDRIVE_MASK=$(printf '%#x' "$(( CURRENT_HEX_MASK & 0x4000 ))")
-  [ "x${OVERDRIVE_MASK}" == "x0x4000" ] && return 0
+  [ "${OVERDRIVE_MASK}" == "0x4000" ] && return 0
   WANTED_MASK=$(printf '%#x' "$(( CURRENT_HEX_MASK | 0x4000 ))")
   echo -n "In order to set custom amdgpu power states, enable OverDrive by "
   echo -n "booting the machine with amdgpu.ppfeaturemask=${WANTED_MASK} "
@@ -146,9 +146,11 @@ function set_custom_states() {
 function backup_states() {
   if [ ! -r ${BACKUP_STATE_FILE} ]; then
     cp ${SYS_PP_OD_CLK} ${BACKUP_STATE_FILE}
+    if [ "${PWR_LEVEL}" == "manual" ]; then
+      echo "FORCE_POWER_PROFILE: 0" >> ${BACKUP_STATE_FILE}
+    fi
     echo "FORCE_PERF_LEVEL: $(cat ${PWR_LEVEL})" >> ${BACKUP_STATE_FILE}
     echo "FORCE_POWER_CAP: $(cat ${PWR_CAP_FILE})" >> ${BACKUP_STATE_FILE}
-    echo "FORCE_POWER_PROFILE: 0" >> ${BACKUP_STATE_FILE}
     echo "Writen initial backup states to ${BACKUP_STATE_FILE}"
   else
     echo "Won't write initial state to ${BACKUP_STATE_FILE}, it already exists."
@@ -178,7 +180,7 @@ for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
   HWMON_ID=$(ls -1 /sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon)
   PWR_CAP_FILE=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon/${HWMON_ID}/power1_cap
   if [ -f ${SYS_PP_OD_CLK} ]; then
-    if [ "x${RESTORE}" == "xtrue" ]; then
+    if [ "${RESTORE}" == "true" ]; then
       restore_states
     else
       backup_states
