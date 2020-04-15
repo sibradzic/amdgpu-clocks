@@ -32,10 +32,10 @@ function fill_sclks() {
 function fill_mclks() {
   if [ -z "${3}" ]; then     # Vega20 and later ASICs
     echo "  MCLK state ${1}: ${2}"
-    SCLK[${1}]="m ${1} ${2%*M[Hh]z}"
+    MCLK[${1}]="m ${1} ${2%*M[Hh]z}"
   else                       # Vega10 and previous ASICs
     echo "  MCLK state ${1}: ${2}, ${3}"
-    SCLK[${1}]="m ${1} ${2%*M[Hh]z} ${3%*mV}"
+    MCLK[${1}]="m ${1} ${2%*M[Hh]z} ${3%*mV}"
   fi
 }
 
