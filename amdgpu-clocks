@@ -40,8 +40,16 @@ function fill_mclks() {
 }
 
 function fill_vddccurve() {
-  echo "  VDDC Curve state $1: ${2}, ${4}"
-  VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${4%*mV}"
+  if [ $# -eq 3 ]; then
+    echo "  VDDC Curve state $1: ${2} ${3}"
+    VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${3%*mV}"
+  elif [ $# -eq 4 ]; then
+    echo "  VDDC Curve state $1: ${2} @ ${4}"
+    VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${4%*mV}"
+  else
+    echo "ERROR: Can't parse '$@', did pp_od_clk_voltage API change again?"
+    exit 2
+  fi
 }
 
 function parse_states() {
