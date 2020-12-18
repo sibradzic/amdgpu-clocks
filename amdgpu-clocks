@@ -138,6 +138,7 @@ function set_custom_states() {
   done
   for VDDC_CURVE_STATE in "${VDDC_CURVE[@]}"; do
     echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}
+    [ $? -ne "0" ] && echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
   done
   echo 'c' > ${SYS_PP_OD_CLK}
   if [ "${FORCE_SCLK}" ]; then
