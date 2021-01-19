@@ -124,6 +124,11 @@ function parse_states() {
 }
 
 function set_custom_states() {
+  echo 0 > ${SYS_DPM_SCLK} 2>&1
+  echo 0 > ${SYS_DPM_MCLK} 2>&1
+  sleep 0.5
+  echo 'c' > ${SYS_PP_OD_CLK}
+  sleep 0.5
   if [ "${FORCE_LEVEL}" ]; then
     echo ${FORCE_LEVEL} > ${PWR_LEVEL}
   fi
