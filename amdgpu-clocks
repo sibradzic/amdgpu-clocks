@@ -124,6 +124,13 @@ function parse_states() {
 }
 
 function set_custom_states() {
+  if [ "${RESTORE}" == "true" ] && [ "${FORCE_LEVEL}" == "auto" ]; then
+    echo manual > ${PWR_LEVEL}
+    sleep 0.25
+    echo 0 > ${SYS_DPM_SCLK} 2>&1
+    echo 0 > ${SYS_DPM_MCLK} 2>&1
+    sleep 0.25
+  fi
   if [ "${FORCE_LEVEL}" ]; then
     echo ${FORCE_LEVEL} > ${PWR_LEVEL}
   fi
