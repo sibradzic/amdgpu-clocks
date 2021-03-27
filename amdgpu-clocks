@@ -183,6 +183,12 @@ function restore_states() {
   fi
 }
 
+function clear_vars() {
+    unset SCLK
+    unset MCLK
+    unset VDDC_CURVE
+}
+
 check_ppfeaturemask
 
 for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
@@ -208,6 +214,7 @@ for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
     echo "Committing custom states to ${SYS_PP_OD_CLK}:"
     set_custom_states
     echo "  Done"
+    clear_vars
   else
     echo "WARNING: ${SYS_PP_OD_CLK} does not exist, skipping!"
   fi
