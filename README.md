@@ -6,7 +6,7 @@ This is a simple script that can be used to set custom power states for recent
 AMD GPUs that are driven by **amdgpu** Linux kernel driver. The script is able
 to set custom clocks, voltages and some other power states, assuming that
 Radeon OverDrive is enabled in the driver. The OverDrive is not enabled by
-default as of Linux 5.0, it can be enabled by setting 14th bit (0x4000) of a
+default as of Linux 5.x, it can be enabled by setting 14th bit (0x4000) of a
 **ppfeaturemask** amdgpu driver to 1. For example, setting
 **amdgpu.ppfeaturemask=0xfffd7fff** or **amdgpu.ppfeaturemask=0xffffffff**
 kernel boot option will do the trick. This would enable amdgpu driver sysfs
@@ -18,12 +18,13 @@ multiple AMD graphics cards.
 
 ### How does it work
 
-By default, custom power states are defined in files that are expected to
-reside in `/etc/default/amdgpu-custom-state.cardX`, where X corresponds to a
-card in `/sys/class/drm/cardX`. The custom state files have same format as the
-actual `/sys/class/drm/cardX/device/pp_od_clk_voltage`, with option to add
-newlines, comments (lines starting with `#`) and three extra parameters, used
-to set extra power state details. These are **FORCE_SCLK** & **FORCE_MCLK**,
+By default, custom power states for a particular GPU are defined in
+`/etc/default/amdgpu-custom-state.cardX` file, which is expected to be created
+by user, and where X corresponds to a card in `/sys/class/drm/cardX`. The
+custom state file have same format as the actual
+`/sys/class/drm/cardX/device/pp_od_clk_voltage`, with option to add
+newlines, comments (lines starting with `#`) and few additional parameters, used
+to set extra power state parameters. These are **FORCE_SCLK** & **FORCE_MCLK**,
 that can be used to limit GPU and memory power states to a particular subset
 of states, **FORCE_POWER_CAP** that can be used to set desired power cap, and
 **FORCE_PERF_LEVEL** that can be used to force desired
