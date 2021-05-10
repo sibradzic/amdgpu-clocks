@@ -52,6 +52,11 @@ function fill_vddccurve() {
   fi
 }
 
+function fill_vddgfx_offset() {
+  echo "  VDD GFX Offset: $1"
+  VDDGFX_OFFSET="vo ${1%*mV}"
+}
+
 function parse_states() {
   mapfile -t STATE_LINES < $1
   for LNNO in "${!STATE_LINES[@]}"; do
@@ -67,6 +72,8 @@ function parse_states() {
         ;; # Just ignoring these for now
       "VDDC_CURVE_VOLT["[012]"]: "*)
         ;; # Just ignoring these for now
+      "OD_VDDGFX_OFFSET:")
+        offset_fill_func=fill_vddgfx_offset ;;
       "OD_RANGE:")
         echo "  Maximum clocks & voltages:";;
       "SCLK: "*)
@@ -86,6 +93,9 @@ function parse_states() {
         ;;
       [0-9]": "*)
         $state_fill_func ${LINE%%:*} ${LINE#* }
+        ;;
+      [-0-9]*"mV")
+        $offset_fill_func ${LINE%%:*} ${LINE#* }
         ;;
       "FORCE_SCLK: "[0-9]*)
         echo "  Force SCLK state to ${LINE#* }"
@@ -147,6 +157,11 @@ function set_custom_states() {
     echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}
     [ $? -ne "0" ] && echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
   done
+
+  if [ "${VDDGFX_OFFSET}" ]; then
+    echo ${VDDGFX_OFFSET} > ${SYS_PP_OD_CLK}
+  fi
+
   echo 'c' > ${SYS_PP_OD_CLK}
   if [ "${FORCE_SCLK}" ]; then
     echo ${FORCE_SCLK} > ${SYS_DPM_SCLK}
@@ -187,6 +202,7 @@ function clear_vars() {
     unset SCLK
     unset MCLK
     unset VDDC_CURVE
+    unset VDDGFX_OFFSET
 }
 
 check_ppfeaturemask
