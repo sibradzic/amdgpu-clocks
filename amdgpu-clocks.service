@@ -1,6 +1,7 @@
 [Unit]
 Description=Set custom amdgpu clocks & voltages
 After=multi-user.target rc-local.service systemd-user-sessions.service
+Wants=modprobe@amdgpu.service
 
 [Service]
 Type=oneshot
