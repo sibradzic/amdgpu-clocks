@@ -58,7 +58,7 @@ function fill_vddgfx_offset() {
 }
 
 function parse_states() {
-  mapfile -t STATE_LINES < $1
+  mapfile -t STATE_LINES < <(tr -d '\000' < $1)
   for LNNO in "${!STATE_LINES[@]}"; do
     LINE="${STATE_LINES[$LNNO]}"
     case ${LINE} in
