@@ -128,6 +128,8 @@ function parse_states() {
     esac
   done
   if [ "$1" == "${SYS_PP_OD_CLK}" ]; then
+    DETECTED_MCLK=("${MCLK[@]}")
+    DETECTED_VDDC_CURVE=("${VDDC_CURVE[@]}")
     POWER_LIMIT=$(cat $PWR_CAP_FILE)
     echo "  Curent power cap: ${POWER_LIMIT%*000000}W"
   fi
@@ -151,17 +153,22 @@ function set_custom_states() {
     echo ${CSTATE} > ${SYS_PP_OD_CLK}
   done
   for MSTATE in "${MCLK[@]}"; do
-    echo ${MSTATE} > ${SYS_PP_OD_CLK}
+    OLD_MSTATE=${DETECTED_MCLK[$((${MSTATE:3:1}))]}
+    if [ "${MSTATE}" != "${OLD_MSTATE}" ]; then
+      echo ${MSTATE} > ${SYS_PP_OD_CLK}
+      [ $? -ne "0" ] && echo "ERROR: echo ${MSTATE} > ${SYS_PP_OD_CLK}"
+    fi
   done
   for VDDC_CURVE_STATE in "${VDDC_CURVE[@]}"; do
-    echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}
-    [ $? -ne "0" ] && echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
+    OLD_CURVE_STATE=${DETECTED_VDDC_CURVE[$((${VDDC_CURVE_STATE:3:1}))]}
+    if [ "${VDDC_CURVE_STATE}" != "${OLD_CURVE_STATE}" ]; then
+      echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}
+      [ $? -ne "0" ] && echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
+    fi
   done
-
   if [ "${VDDGFX_OFFSET}" ]; then
     echo ${VDDGFX_OFFSET} > ${SYS_PP_OD_CLK}
   fi
-
   echo 'c' > ${SYS_PP_OD_CLK}
   if [ "${FORCE_SCLK}" ]; then
     echo ${FORCE_SCLK} > ${SYS_DPM_SCLK}
