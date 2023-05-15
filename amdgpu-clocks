@@ -121,8 +121,7 @@ function parse_states() {
       "#"*) ;;
       "") ;;
       *)
-        let "LINE_NUMBER = ${LNNO} + 1"
-        echo "  Unexpected value in ${1}:${LINE_NUMBER}"
+        echo "  Unexpected value in ${1}:$((LNNO + 1))"
         exit 2
         ;;
     esac
