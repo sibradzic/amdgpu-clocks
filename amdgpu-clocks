@@ -149,15 +149,15 @@ function set_custom_states() {
   for MSTATE in "${MCLK[@]}"; do
     OLD_MSTATE=${DETECTED_MCLK[$((${MSTATE:3:1}))]}
     if [ "${MSTATE}" != "${OLD_MSTATE}" ]; then
-      echo "${MSTATE}" > "${SYS_PP_OD_CLK}"
-      [ $? -ne "0" ] && echo "ERROR: echo ${MSTATE} > ${SYS_PP_OD_CLK}"
+      echo "${MSTATE}" > "${SYS_PP_OD_CLK}" ||
+        echo "ERROR: echo ${MSTATE} > ${SYS_PP_OD_CLK}"
     fi
   done
   for VDDC_CURVE_STATE in "${VDDC_CURVE[@]}"; do
     OLD_CURVE_STATE=${DETECTED_VDDC_CURVE[$((${VDDC_CURVE_STATE:3:1}))]}
     if [ "${VDDC_CURVE_STATE}" != "${OLD_CURVE_STATE}" ]; then
-      echo "${VDDC_CURVE_STATE}" > "${SYS_PP_OD_CLK}"
-      [ $? -ne "0" ] && echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
+      echo "${VDDC_CURVE_STATE}" > "${SYS_PP_OD_CLK}" ||
+        echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
     fi
   done
   if [ "${VDDGFX_OFFSET}" ]; then
