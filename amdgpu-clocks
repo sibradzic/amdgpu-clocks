@@ -221,7 +221,6 @@ for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
   PWR_PROFILE=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_power_profile_mode
   SYS_DPM_SCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_sclk
   SYS_DPM_MCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_mclk
-  HWMON_PATH=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon
   HWMON_ID=$(ls -1 /sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon)
   PWR_CAP_FILE=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon/${HWMON_ID}/power1_cap
   if [ -f "${SYS_PP_OD_CLK}" ]; then
