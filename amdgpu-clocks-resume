@@ -2,7 +2,7 @@
 
 case $1 in
   post)
-    if $(systemctl is-active --quiet amdgpu-clocks.service); then
+    if systemctl is-active --quiet amdgpu-clocks ; then
         /usr/bin/systemctl reload amdgpu-clocks
     fi
     ;;
