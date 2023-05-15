@@ -214,7 +214,7 @@ function clear_vars() {
 
 check_ppfeaturemask
 
-for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
+for USER_STATE_FILE in "${USER_STATES_PATH}"*.card* ; do
   BACKUP_STATE_FILE=/tmp/${USER_STATE_FILE##*/}.initial
   SYS_PP_OD_CLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_od_clk_voltage
   PWR_LEVEL=/sys/class/drm/${USER_STATE_FILE##*.}/device/power_dpm_force_performance_level
