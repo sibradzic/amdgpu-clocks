@@ -5,31 +5,32 @@
 This is a simple script that can be used to set custom power states for recent
 AMD GPUs that are driven by **amdgpu** Linux kernel driver. The script is able
 to set custom clocks, voltages and some other power states, assuming that
-Radeon OverDrive is enabled in the driver. The OverDrive is not enabled by
-default as of Linux 5.x, it can be enabled by setting 14th bit (0x4000) of a
+Radeon OverDrive is enabled in kernel boot opions. The OverDrive is not enabled
+by default as of Linux 5.x, it can be enabled by setting 14th bit (0x4000) of a
 **ppfeaturemask** amdgpu driver to 1. For example, setting
 **amdgpu.ppfeaturemask=0xfffd7fff** or **amdgpu.ppfeaturemask=0xffffffff**
 kernel boot option will do the trick. This would enable amdgpu driver sysfs
 API that allows fine grain control of GPU power states (GPU & VRAM clocks &
-voltages, depending on actual hardware).
+voltages, depending on the actual hardware).
 It should work on Polaris, Vega (unfortunately Vega found on AMD APUs does
-not expose this API) and Navi cards, and it can be used to easily manage
+not expose this API), Navi and RDNA cards, and it can be used to easily manage
 multiple AMD graphics cards.
 
 ### How does it work
 
-By default, custom power states for a particular GPU are defined in
+By default, custom power states for a particular GPU can be defined in
 `/etc/default/amdgpu-custom-state.cardX` file, which is expected to be created
 by user, and where X corresponds to a card in `/sys/class/drm/cardX`. The
 custom state file have same format as the actual
 `/sys/class/drm/cardX/device/pp_od_clk_voltage`, with option to add
-newlines, comments (lines starting with `#`) and few additional parameters, used
+newlines, comments (lines starting with `#`) and few additional parameters used
 to set extra power state parameters. These are **FORCE_SCLK** & **FORCE_MCLK**,
 that can be used to limit GPU and memory power states to a particular subset
-of states, **FORCE_POWER_CAP** that can be used to set desired power cap, and
+of states, **FORCE_POWER_CAP** that can be used to set desired power cap,
 **FORCE_PERF_LEVEL** that can be used to force desired
-`power_dpm_force_performance_level` of a card (which can be `auto`, `low`,
-`high`, `manual`, etc).
+`power_dpm_force_performance_level` for a card (which can be `auto`, `low`,
+`high`, `manual`, etc) and **FORCE_POWER_PROFILE** used for manually setting
+the profile found in card's `pp_power_profile_mode`.
 
 Here is an example how custom power state file may look like for Polaris cards:
 
@@ -67,6 +68,13 @@ Here is an example how custom power state file may look like for Navi cards:
     FORCE_POWER_CAP: 87000000
     FORCE_PERF_LEVEL: manual
 
+Here is an example how custom power state file may look like for RDNA2 cards:
+
+    OD_VDDGFX_OFFSET:
+    -75mV
+    FORCE_PERF_LEVEL: manual
+    FORCE_POWER_CAP: 99000000
+
 ### Installing and manually running the script
 
 Simply place the [script](amdgpu-clocks) in `/usr/local/bin/amdgpu-clocks`:
@@ -76,31 +84,21 @@ Simply place the [script](amdgpu-clocks) in `/usr/local/bin/amdgpu-clocks`:
 and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
 
     $ sudo amdgpu-clocks
+
     Detecting the state values at /sys/class/drm/card0/device/pp_od_clk_voltage:
-      SCLK state 0: 300MHz, 750mV
-      SCLK state 1: 500MHz, 775mV
-      SCLK state 2: 600MHz, 785mV
-      SCLK state 3: 700MHz, 800mV
-      SCLK state 4: 800MHz, 820mV
-      SCLK state 5: 900MHz, 840mV
-      SCLK state 6: 950MHz, 850mV
-      SCLK state 7: 1000MHz, 860mV
-      MCLK state 0: 300MHz, 750mV
-      MCLK state 1: 1000MHz, 800mV
-      MCLK state 2: 1750MHz, 900mV
+      SCLK state 0: 700Mhz
+      SCLK state 1: 2539Mhz
+      MCLK state 0: 97Mhz
+      MCLK state 1: 1000MHz
+      VDD GFX Offset: 0mV
       Maximum clocks & voltages:
-        SCLK clock 2000MHz
-        MCLK clock 2250MHz
-        VDDC voltage 1150mV
-      Curent power cap: 87W
-    Verifying user state values at amdgpu-custom-states.card0:
-      SCLK state 6: 1000MHz, 860mV
-      SCLK state 7: 1050MHz, 890mV
-      MCLK state 2: 1600MHz, 900mV
-      Force SCLK state to 5 6 7
-      Force MCLK state to 2
-      Force power cap to 90W
+        SCLK clock 3150Mhz
+        MCLK clock 1200Mhz
+      Curent power cap: 130W
+    Verifying user state values at /etc/default/amdgpu-custom-state.card0:
+      VDD GFX Offset: -75mV
       Force performance level to manual
+      Force power cap to 99W
     Committing custom states to /sys/class/drm/card0/device/pp_od_clk_voltage:
       Done
 
@@ -118,7 +116,7 @@ parameter that can be used to restore all states to the initial defaults
 ### Making the custom power states persist
 
 This can be achieved by placing provided *systemd* service
-[file](amdgpu-clocks.service) in `/lib/systemd/system/` directory,
+[file](amdgpu-clocks.service) in `/etc/systemd/system/` directory,
 and enable it:
 
     $ sudo systemctl enable --now amdgpu-clocks
