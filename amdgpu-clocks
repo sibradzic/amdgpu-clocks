@@ -47,7 +47,7 @@ function fill_vddccurve() {
     echo "  VDDC Curve state $1: ${2} @ ${4}"
     VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${4%*mV}"
   else
-    echo "ERROR: Can't parse '$@', did pp_od_clk_voltage API change again?"
+    echo "ERROR: Can't parse '$*', did pp_od_clk_voltage API change again?"
     exit 2
   fi
 }
@@ -58,7 +58,7 @@ function fill_vddgfx_offset() {
 }
 
 function parse_states() {
-  mapfile -t STATE_LINES < <(tr -d '\000' < $1)
+  mapfile -t STATE_LINES < <(tr -d '\000' < "$1")
   for LNNO in "${!STATE_LINES[@]}"; do
     LINE="${STATE_LINES[$LNNO]}"
     case ${LINE} in
@@ -121,8 +121,7 @@ function parse_states() {
       "#"*) ;;
       "") ;;
       *)
-        let "LINE_NUMBER = ${LNNO} + 1"
-        echo "  Unexpected value in ${1}:${LINE_NUMBER}"
+        echo "  Unexpected value in ${1}:$((LNNO + 1))"
         exit 2
         ;;
     esac
@@ -130,40 +129,40 @@ function parse_states() {
   if [ "$1" == "${SYS_PP_OD_CLK}" ]; then
     DETECTED_MCLK=("${MCLK[@]}")
     DETECTED_VDDC_CURVE=("${VDDC_CURVE[@]}")
-    POWER_LIMIT=$(cat $PWR_CAP_FILE)
+    POWER_LIMIT=$(cat "$PWR_CAP_FILE")
     echo "  Curent power cap: ${POWER_LIMIT%*000000}W"
   fi
 }
 
 function set_custom_states() {
   if [ "${RESTORE}" == "true" ] && [ "${FORCE_LEVEL}" == "auto" ]; then
-    echo manual > ${PWR_LEVEL}
+    echo manual > "${PWR_LEVEL}"
     sleep 0.25
-    echo 0 > ${SYS_DPM_SCLK} 2>&1
-    echo 0 > ${SYS_DPM_MCLK} 2>&1
+    echo 0 > "${SYS_DPM_SCLK}" 2>&1
+    echo 0 > "${SYS_DPM_MCLK}" 2>&1
     sleep 0.25
   fi
   for CSTATE in "${SCLK[@]}"; do
-    echo ${CSTATE} > ${SYS_PP_OD_CLK}
+    echo "${CSTATE}" > "${SYS_PP_OD_CLK}"
   done
   for MSTATE in "${MCLK[@]}"; do
     OLD_MSTATE=${DETECTED_MCLK[$((${MSTATE:3:1}))]}
     if [ "${MSTATE}" != "${OLD_MSTATE}" ]; then
-      echo ${MSTATE} > ${SYS_PP_OD_CLK}
-      [ $? -ne "0" ] && echo "ERROR: echo ${MSTATE} > ${SYS_PP_OD_CLK}"
+      echo "${MSTATE}" > "${SYS_PP_OD_CLK}" ||
+        echo "ERROR: echo ${MSTATE} > ${SYS_PP_OD_CLK}"
     fi
   done
   for VDDC_CURVE_STATE in "${VDDC_CURVE[@]}"; do
     OLD_CURVE_STATE=${DETECTED_VDDC_CURVE[$((${VDDC_CURVE_STATE:3:1}))]}
     if [ "${VDDC_CURVE_STATE}" != "${OLD_CURVE_STATE}" ]; then
-      echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}
-      [ $? -ne "0" ] && echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
+      echo "${VDDC_CURVE_STATE}" > "${SYS_PP_OD_CLK}" ||
+        echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
     fi
   done
   if [ "${VDDGFX_OFFSET}" ]; then
-    echo ${VDDGFX_OFFSET} > ${SYS_PP_OD_CLK}
+    echo "${VDDGFX_OFFSET}" > "${SYS_PP_OD_CLK}"
   fi
-  echo 'c' > ${SYS_PP_OD_CLK}
+  echo 'c' > "${SYS_PP_OD_CLK}"
   if [ "${FORCE_LEVEL}" ]; then
     echo ${FORCE_LEVEL} > ${PWR_LEVEL}
   fi
@@ -171,24 +170,24 @@ function set_custom_states() {
     echo ${FORCE_PROFILE} > ${PWR_PROFILE}
   fi
   if [ "${FORCE_SCLK}" ]; then
-    echo ${FORCE_SCLK} > ${SYS_DPM_SCLK}
+    echo "${FORCE_SCLK}" > "${SYS_DPM_SCLK}"
   fi
   if [ "${FORCE_MCLK}" ]; then
-    echo ${FORCE_MCLK} > ${SYS_DPM_MCLK}
+    echo "${FORCE_MCLK}" > "${SYS_DPM_MCLK}"
   fi
   if [ "${FORCE_POWER_CAP}" ]; then
-    echo ${FORCE_POWER_CAP} > ${PWR_CAP_FILE}
+    echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
   fi
 }
 
 function backup_states() {
-  if [ ! -r ${BACKUP_STATE_FILE} ]; then
-    cp ${SYS_PP_OD_CLK} ${BACKUP_STATE_FILE}
+  if [ ! -r "${BACKUP_STATE_FILE}" ]; then
+    cp "${SYS_PP_OD_CLK}" "${BACKUP_STATE_FILE}"
     if [ "${PWR_LEVEL}" == "manual" ]; then
-      echo "FORCE_POWER_PROFILE: 0" >> ${BACKUP_STATE_FILE}
+      echo "FORCE_POWER_PROFILE: 0" >> "${BACKUP_STATE_FILE}"
     fi
-    echo "FORCE_PERF_LEVEL: $(cat ${PWR_LEVEL})" >> ${BACKUP_STATE_FILE}
-    echo "FORCE_POWER_CAP: $(cat ${PWR_CAP_FILE})" >> ${BACKUP_STATE_FILE}
+    echo "FORCE_PERF_LEVEL: $(cat "${PWR_LEVEL}")" >> "${BACKUP_STATE_FILE}"
+    echo "FORCE_POWER_CAP: $(cat "${PWR_CAP_FILE}")" >> "${BACKUP_STATE_FILE}"
     echo "Writen initial backup states to ${BACKUP_STATE_FILE}"
   else
     echo "Won't write initial state to ${BACKUP_STATE_FILE}, it already exists."
@@ -196,7 +195,7 @@ function backup_states() {
 }
 
 function restore_states() {
-  if [ -f ${BACKUP_STATE_FILE} ]; then
+  if [ -f "${BACKUP_STATE_FILE}" ]; then
     echo "Restoring all states to the initial defaults from ${BACKUP_STATE_FILE}"
     USER_STATE_FILE=${BACKUP_STATE_FILE}
   else
@@ -214,26 +213,29 @@ function clear_vars() {
 
 check_ppfeaturemask
 
-for USER_STATE_FILE in $(ls -1 ${USER_STATES_PATH}*.card*); do
+for USER_STATE_FILE in "${USER_STATES_PATH}"*.card* ; do
   BACKUP_STATE_FILE=/tmp/${USER_STATE_FILE##*/}.initial
-  SYS_PP_OD_CLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_od_clk_voltage
-  PWR_LEVEL=/sys/class/drm/${USER_STATE_FILE##*.}/device/power_dpm_force_performance_level
-  PWR_PROFILE=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_power_profile_mode
-  SYS_DPM_SCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_sclk
-  SYS_DPM_MCLK=/sys/class/drm/${USER_STATE_FILE##*.}/device/pp_dpm_mclk
-  HWMON_PATH=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon
-  HWMON_ID=$(ls -1 /sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon)
-  PWR_CAP_FILE=/sys/class/drm/${USER_STATE_FILE##*.}/device/hwmon/${HWMON_ID}/power1_cap
-  if [ -f ${SYS_PP_OD_CLK} ]; then
+
+  sys_device=/sys/class/drm/${USER_STATE_FILE##*.}/device
+  sys_hwmons=( "${sys_device}"/hwmon/hwmon[0-9] )
+
+  SYS_PP_OD_CLK=${sys_device}/pp_od_clk_voltage
+  PWR_LEVEL=${sys_device}/power_dpm_force_performance_level
+  PWR_PROFILE=${sys_device}/pp_power_profile_mode
+  SYS_DPM_SCLK=${sys_device}/pp_dpm_sclk
+  SYS_DPM_MCLK=${sys_device}/pp_dpm_mclk
+  PWR_CAP_FILE=${sys_hwmons[0]}/power1_cap
+
+  if [ -f "${SYS_PP_OD_CLK}" ]; then
     if [ "${RESTORE}" == "true" ]; then
       restore_states
     else
       backup_states
     fi
     echo "Detecting the state values at ${SYS_PP_OD_CLK}:"
-    parse_states ${SYS_PP_OD_CLK}
+    parse_states "${SYS_PP_OD_CLK}"
     echo "Verifying user state values at ${USER_STATE_FILE}:"
-    parse_states ${USER_STATE_FILE}
+    parse_states "${USER_STATE_FILE}"
     echo "Committing custom states to ${SYS_PP_OD_CLK}:"
     set_custom_states
     echo "  Done"
