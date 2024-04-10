@@ -86,6 +86,10 @@ function parse_states() {
         MAX_MCLK=${LINE##* }
         MAX_MCLK=${MAX_MCLK%*M[Hh]z}
         ;;
+      "VDDGFX_OFFSET: "*)
+        echo "    VDDGFX offset range: ${LINE#*: }"
+        OFFSET_RANGE=${LINE#*: }
+        ;;
       "VDDC: "*)
         echo "    VDDC voltage ${LINE##* }"
         MAX_VDDC=${LINE##* }
