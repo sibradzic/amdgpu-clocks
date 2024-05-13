@@ -36,7 +36,7 @@ Since some Linux kernel versions are known to enumerate the very same card to
 a different `cardX` identifier (X randomly toggles between 0 or 1 on reboot),
 one can alternatively define the custom state using
 `/etc/default/amdgpu-custom-state.pci:xxxx:xx:xx.x` file instead, where
-`xx:xx.x` corrsponds to intended card's PCI <domain>:<bus>:<device>.<function>
+`xx:xx.x` corrsponds to intended card's PCI `<domain>:<bus>:<dev>.<function>`
 numbers. For example `/etc/default/amdgpu-custom-state.pci:0000:03:00.0`.
 
 Here is an example how custom power state file may look like for Polaris cards:
