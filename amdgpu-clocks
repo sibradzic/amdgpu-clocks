@@ -209,18 +209,30 @@ function restore_states() {
 }
 
 function clear_vars() {
-    unset SCLK
-    unset MCLK
-    unset VDDC_CURVE
-    unset VDDGFX_OFFSET
+    unset SCLK MCLK
+    unset VDDC_CURVE VDDGFX_OFFSET
+    unset sys_device sys_hwmons
 }
 
 check_ppfeaturemask
 
-for USER_STATE_FILE in "${USER_STATES_PATH}"*.card* ; do
+shopt -s extglob
+for USER_STATE_FILE in ${USER_STATES_PATH}*.+(card?|card??|pci:????:??:??.?); do
   BACKUP_STATE_FILE=/tmp/${USER_STATE_FILE##*/}.initial
-
-  sys_device=/sys/class/drm/${USER_STATE_FILE##*.}/device
+  if [[ "${USER_STATE_FILE}" == *"pci"* ]]; then
+    STATE_PCIDEV=${USER_STATE_FILE#*.}
+    for CARD in /sys/class/drm/card{?,??}; do
+      LINK=$(readlink $CARD)
+      if [ "${LINK}" ]; then
+        CARD_PCDEV=${LINK%*/drm/card*}
+        if [[ "${CARD_PCDEV##*/}" == "${STATE_PCIDEV#*:}" ]]; then
+          sys_device="${CARD}"/device
+        fi
+      fi
+    done
+  else
+    sys_device=/sys/class/drm/${USER_STATE_FILE##*.}/device
+  fi
   sys_hwmons=( "${sys_device}"/hwmon/hwmon[0-9] )
 
   SYS_PP_OD_CLK=${sys_device}/pp_od_clk_voltage
