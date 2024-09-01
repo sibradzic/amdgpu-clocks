@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 USER_STATES_PATH=${USER_STATES_PATH:-/etc/default/amdgpu-custom-state}
 SYS_PPFMASK=/sys/module/amdgpu/parameters/ppfeaturemask
