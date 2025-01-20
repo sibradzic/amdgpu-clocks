@@ -146,6 +146,21 @@ function set_custom_states() {
     echo 0 > "${SYS_DPM_MCLK}" 2>&1
     sleep 0.25
   fi
+  if [ "${FORCE_LEVEL}" ]; then
+    echo ${FORCE_LEVEL} > ${PWR_LEVEL}
+  fi
+  if [ "${FORCE_PROFILE}" ]; then
+    echo ${FORCE_PROFILE} > ${PWR_PROFILE}
+  fi
+  if [ "${FORCE_SCLK}" ]; then
+    echo "${FORCE_SCLK}" > "${SYS_DPM_SCLK}"
+  fi
+  if [ "${FORCE_MCLK}" ]; then
+    echo "${FORCE_MCLK}" > "${SYS_DPM_MCLK}"
+  fi
+  if [ "${FORCE_POWER_CAP}" ]; then
+    echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
+  fi
   for CSTATE in "${SCLK[@]}"; do
     echo "${CSTATE}" > "${SYS_PP_OD_CLK}"
   done
@@ -167,21 +182,6 @@ function set_custom_states() {
     echo "${VDDGFX_OFFSET}" > "${SYS_PP_OD_CLK}"
   fi
   echo 'c' > "${SYS_PP_OD_CLK}"
-  if [ "${FORCE_LEVEL}" ]; then
-    echo ${FORCE_LEVEL} > ${PWR_LEVEL}
-  fi
-  if [ "${FORCE_PROFILE}" ]; then
-    echo ${FORCE_PROFILE} > ${PWR_PROFILE}
-  fi
-  if [ "${FORCE_SCLK}" ]; then
-    echo "${FORCE_SCLK}" > "${SYS_DPM_SCLK}"
-  fi
-  if [ "${FORCE_MCLK}" ]; then
-    echo "${FORCE_MCLK}" > "${SYS_DPM_MCLK}"
-  fi
-  if [ "${FORCE_POWER_CAP}" ]; then
-    echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
-  fi
 }
 
 function backup_states() {
