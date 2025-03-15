@@ -92,11 +92,11 @@ FORCE_POWER_CAP: 99000000
 ```
 
 ### RDNA 4
-With **RDNA 4**, `pp_od_clk_voltage` exposes two `SCLK` offsets but only `1`
-(max `SCLK` offset) can be adjusted. Example of custom power state file:
+With **RDNA4**, `pp_od_clk_voltage` exposes `SCLK_OFFSET` instead of multiple
+`SCLK` states. Example of custom power state file:
 ```shell
 OD_SCLK_OFFSET:
-1: 200Mhz
+200Mhz
 OD_MCLK:
 0: 97MHz
 1: 2519MHz
