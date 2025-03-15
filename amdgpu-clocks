@@ -29,6 +29,14 @@ function fill_sclks() {
   fi
 }
 
+function fill_sclk_offset() {
+  echo "  SCLK offset ${1}: ${2}"
+
+  # For now, modyfing the [0] index is unsupported on RDNA4
+  if [[ $1 == "0" ]]; then return; fi
+  SCLK[${1}]="s ${1} ${2%*M[Hh]z}"
+}
+
 function fill_mclks() {
   if [ -z "${3}" ]; then     # Vega20 and later ASICs
     echo "  MCLK state ${1}: ${2}"
@@ -64,6 +72,8 @@ function parse_states() {
     case ${LINE} in
       "OD_SCLK:")
         state_fill_func=fill_sclks ;;
+      "OD_SCLK_OFFSET:")
+        state_fill_func=fill_sclk_offset ;;
       "OD_MCLK:")
         state_fill_func=fill_mclks ;;
       "OD_VDDC_CURVE:")
@@ -78,6 +88,11 @@ function parse_states() {
         echo "  Maximum clocks & voltages:";;
       "SCLK: "*)
         echo "    SCLK clock ${LINE##* }"
+        MAX_SCLK=${LINE##* }
+        MAX_SCLK=${MAX_SCLK%*M[Hh]z}
+        ;;
+      "SCLK_OFFSET:"*)
+        echo "    SCLK offset ${LINE##* }"
         MAX_SCLK=${LINE##* }
         MAX_SCLK=${MAX_SCLK%*M[Hh]z}
         ;;
