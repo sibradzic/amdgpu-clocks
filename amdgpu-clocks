@@ -65,7 +65,20 @@ function fill_vddgfx_offset() {
   VDDGFX_OFFSET="vo ${1%*mV}"
 }
 
+function fill_zero_rpm() {
+  if [ "$1" == "enable" ]; then
+    echo "  Zero RPM enable: $2"
+    ZERO_RPM_ENABLE="$2"
+  fi
+  if [ "$1" == "temperature" ]; then
+    echo "  Zero RPM temperature: $2"
+    ZERO_RPM_STOP_TEMP="$2"
+  fi
+}
+
 function parse_states() {
+  local zero_rpm_setting
+
   mapfile -t STATE_LINES < <(tr -d '\000' < "$1")
   for LNNO in "${!STATE_LINES[@]}"; do
     LINE="${STATE_LINES[$LNNO]}"
@@ -85,7 +98,7 @@ function parse_states() {
       "OD_VDDGFX_OFFSET:")
         offset_fill_func=fill_vddgfx_offset ;;
       "OD_RANGE:")
-        echo "  Maximum clocks & voltages:";;
+        echo "  Value ranges:";;
       "SCLK: "*)
         echo "    SCLK clock ${LINE##* }"
         MAX_SCLK=${LINE##* }
@@ -116,6 +129,9 @@ function parse_states() {
       [-0-9]*"mV")
         $offset_fill_func ${LINE%%:*} ${LINE#* }
         ;;
+      [0-9]*)
+        $state_fill_func ${zero_rpm_setting} ${LINE%%:*} ${LINE#* }
+        ;;
       "FORCE_SCLK: "[0-9]*)
         echo "  Force SCLK state to ${LINE#* }"
         FORCE_SCLK=${LINE#* }
@@ -137,6 +153,18 @@ function parse_states() {
         echo "  Force power profile to ${LINE#* }"
         FORCE_PROFILE=${LINE#* }
         ;;
+      "FAN_ZERO_RPM_ENABLE:")
+        state_fill_func=fill_zero_rpm
+        zero_rpm_setting="enable"
+        ;;
+      "FAN_ZERO_RPM_STOP_TEMPERATURE:")
+        state_fill_func=fill_zero_rpm
+        zero_rpm_setting="temperature"
+        ;;
+      "ZERO_RPM_ENABLE: "*)
+        echo "    Zero RPM enable range: ${LINE#*: }" ;;
+      "ZERO_RPM_STOP_TEMPERATURE: "*)
+        echo "    Zero RPM stop temperature range: ${LINE#*: }" ;;
       "#"*) ;;
       "") ;;
       *)
@@ -197,6 +225,14 @@ function set_custom_states() {
   if [ "${FORCE_POWER_CAP}" ]; then
     echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
   fi
+  if [ "${ZERO_RPM_ENABLE}" ]; then
+    echo "${ZERO_RPM_ENABLE}" > "${SYS_ZERO_RPM_ENABLE}"
+    echo "c" > "${SYS_ZERO_RPM_ENABLE}"
+  fi
+  if [ "${ZERO_RPM_STOP_TEMP}" ]; then
+    echo "${ZERO_RPM_STOP_TEMP}" > "${SYS_ZERO_RPM_STOP_TEMP}"
+    echo "c" > "${SYS_ZERO_RPM_STOP_TEMP}"
+  fi
 }
 
 function backup_states() {
@@ -207,6 +243,15 @@ function backup_states() {
     fi
     echo "FORCE_PERF_LEVEL: $(cat "${PWR_LEVEL}")" >> "${BACKUP_STATE_FILE}"
     echo "FORCE_POWER_CAP: $(cat "${PWR_CAP_FILE}")" >> "${BACKUP_STATE_FILE}"
+
+    # Zero RPM
+    if [ -r  "${SYS_ZERO_RPM_ENABLE}" ]; then
+      cat "${SYS_ZERO_RPM_ENABLE}" >> "${BACKUP_STATE_FILE}"
+    fi
+    if [ -r  "${SYS_ZERO_RPM_STOP_TEMP}" ]; then
+      cat "${SYS_ZERO_RPM_STOP_TEMP}" >> "${BACKUP_STATE_FILE}"
+    fi
+
     echo "Writen initial backup states to ${BACKUP_STATE_FILE}"
   else
     echo "Won't write initial state to ${BACKUP_STATE_FILE}, it already exists."
@@ -256,6 +301,8 @@ for USER_STATE_FILE in ${USER_STATES_PATH}*.+(card?|card??|pci:????:??:??.?); do
   SYS_DPM_SCLK=${sys_device}/pp_dpm_sclk
   SYS_DPM_MCLK=${sys_device}/pp_dpm_mclk
   PWR_CAP_FILE=${sys_hwmons[0]}/power1_cap
+  SYS_ZERO_RPM_ENABLE=${sys_device}/gpu_od/fan_ctrl/fan_zero_rpm_enable
+  SYS_ZERO_RPM_STOP_TEMP=${sys_device}/gpu_od/fan_ctrl/fan_zero_rpm_stop_temperature
 
   if [ -f "${SYS_PP_OD_CLK}" ]; then
     if [ "${RESTORE}" == "true" ]; then
@@ -263,10 +310,26 @@ for USER_STATE_FILE in ${USER_STATES_PATH}*.+(card?|card??|pci:????:??:??.?); do
     else
       backup_states
     fi
+    echo ""
     echo "Detecting the state values at ${SYS_PP_OD_CLK}:"
     parse_states "${SYS_PP_OD_CLK}"
+
+    if [ -r "${SYS_ZERO_RPM_ENABLE}" ]; then
+      echo ""
+      echo "Detecting the state values at ${SYS_ZERO_RPM_ENABLE}:"
+      parse_states "${SYS_ZERO_RPM_ENABLE}"
+    fi
+    if [ -r "${SYS_ZERO_RPM_STOP_TEMP}" ]; then
+      echo ""
+      echo "Detecting the state values at ${SYS_ZERO_RPM_STOP_TEMP}:"
+      parse_states "${SYS_ZERO_RPM_STOP_TEMP}"
+    fi
+
+    echo ""
     echo "Verifying user state values at ${USER_STATE_FILE}:"
     parse_states "${USER_STATE_FILE}"
+
+    echo ""
     echo "Committing custom states to ${SYS_PP_OD_CLK}:"
     set_custom_states
     echo "  Done"
