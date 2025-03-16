@@ -40,6 +40,7 @@ one can alternatively define the custom state using
 `<domain>:<bus>:<dev>.<function>` numbers. For example
 `/etc/default/amdgpu-custom-state.pci:0000:03:00.0`.
 
+### Polaris
 Here is an example how custom power state file may look like for Polaris cards:
 
 ```shell
@@ -62,8 +63,9 @@ FORCE_POWER_CAP: 90000000
 FORCE_PERF_LEVEL: manual
 ```
 
+### RDNA 1
 Here is an example how custom power state file may look like for Navi cards:
-```
+```shell
 # For Navi (and Radeon7) we can only set highest SCLK & MCLK, "state 1":
 OD_SCLK:
 1: 1550MHz
@@ -79,7 +81,9 @@ FORCE_POWER_CAP: 87000000
 FORCE_PERF_LEVEL: manual
 ```
 
-Here is an example how custom power state file may look like for RDNA2 cards:
+### RDNA 2/3
+**RDNA 2** introduced voltage offset instead of direct voltage curve modification.
+Here is an example how custom power state file may look like:
 ```
 OD_VDDGFX_OFFSET:
 -75mV
@@ -87,9 +91,10 @@ FORCE_PERF_LEVEL: manual
 FORCE_POWER_CAP: 99000000
 ```
 
-With RDNA4, `pp_od_clk_voltage` exposes two `SCLK` offsets but only `1`
+### RDNA 4
+With **RDNA 4**, `pp_od_clk_voltage` exposes two `SCLK` offsets but only `1`
 (max `SCLK` offset) can be adjusted. Example of custom power state file:
-```
+```shell
 OD_SCLK_OFFSET:
 1: 200Mhz
 OD_MCLK:
@@ -101,6 +106,24 @@ FORCE_POWER_CAP: 25000000
 FORCE_PERF_LEVEL: manual
 # compute
 FORCE_POWER_PROFILE: 5
+```
+
+## Zero RPM
+**RDNA 3** and up exposes Zero RPM fan mode settings in `gpu_od/fan_ctrl/fan_zero_rpm_*`.
+`amdgpu-clocks` can read, store and set these values. Custom values are stored
+alongside other settings in `/etc/default/amdgpu-custom-state.cardX`.
+
+Example of custom power state file for RDNA3+ with Zero RPM settings:
+```shell
+# exmaple settings
+OD_VDDGFX_OFFSET:
+-30mV
+FORCE_POWER_CAP: 12000000
+# Zero RPM settings
+FAN_ZERO_RPM_ENABLE:
+0
+FAN_ZERO_RPM_STOP_TEMPERATURE:
+62
 ```
 
 ### Installing and manually running the script
