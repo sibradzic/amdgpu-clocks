@@ -31,7 +31,7 @@ function fill_sclks() {
 
 function fill_sclk_offset() {
   echo "  SCLK offset: ${1}"
-  SCLK="s ${1%*M[Hh]z}"
+  SCLK_OFFSET="s ${1%*M[Hh]z}"
 }
 
 function fill_mclks() {
@@ -192,6 +192,9 @@ function set_custom_states() {
   for CSTATE in "${SCLK[@]}"; do
     echo "${CSTATE}" > "${SYS_PP_OD_CLK}"
   done
+  if [ "${SCLK_OFFSET}" ]; then
+    echo "${SCLK_OFFSET}" > "${SYS_PP_OD_CLK}"
+  fi
   for MSTATE in "${MCLK[@]}"; do
     OLD_MSTATE=${DETECTED_MCLK[$((${MSTATE:3:1}))]}
     if [ "${MSTATE}" != "${OLD_MSTATE}" ]; then
@@ -273,7 +276,7 @@ function restore_states() {
 }
 
 function clear_vars() {
-    unset SCLK MCLK
+    unset SCLK MCLK SCLK_OFFSET
     unset VDDC_CURVE VDDGFX_OFFSET
     unset sys_device sys_hwmons
 }
