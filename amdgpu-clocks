@@ -30,8 +30,22 @@ function fill_sclks() {
 }
 
 function fill_sclk_offset() {
-  echo "  SCLK offset: ${1}"
-  SCLK_OFFSET="s ${1%*M[Hh]z}"
+  local offset_value
+
+  if [[ $1 =~ M[Hh]z ]]; then
+    [[ -z $SCLK_OFFSET_METHOD ]] && SCLK_OFFSET_METHOD="proper"
+    offset_value="$1"
+  else
+    # Legacy method for Linux < 6.14
+    # Modyfing [0] index is unsupported
+    [[ -z $SCLK_OFFSET_METHOD ]] && SCLK_OFFSET_METHOD="legacy"
+    [[ $1 != "1" ]] && return
+    offset_value="$2"
+  fi
+
+  echo "  SCLK offset: $offset_value"
+  SCLK_OFFSET="s ${offset_value%*M[Hh]z}"
+  [[ $SCLK_OFFSET_METHOD == "legacy" ]] && SCLK_OFFSET="s 1 ${offset_value%*M[Hh]z}"
 }
 
 function fill_mclks() {
@@ -190,6 +204,7 @@ function set_custom_states() {
     sleep 0.25
   fi
   for CSTATE in "${SCLK[@]}"; do
+    [[ -z $CSTATE ]] && continue
     echo "${CSTATE}" > "${SYS_PP_OD_CLK}"
   done
   if [ "${SCLK_OFFSET}" ]; then
@@ -276,9 +291,9 @@ function restore_states() {
 }
 
 function clear_vars() {
-    unset SCLK MCLK SCLK_OFFSET
-    unset VDDC_CURVE VDDGFX_OFFSET
-    unset sys_device sys_hwmons
+  unset SCLK MCLK SCLK_OFFSET SCLK_OFFSET_METHOD
+  unset VDDC_CURVE VDDGFX_OFFSET
+  unset sys_device sys_hwmons
 }
 
 check_ppfeaturemask
