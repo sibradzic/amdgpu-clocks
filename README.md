@@ -139,22 +139,36 @@ and specify custom power states in `/etc/default/amdgpu-custom-states.card0`:
 ```shell
 $ sudo amdgpu-clocks
 
-Detecting the state values at /sys/class/drm/card0/device/pp_od_clk_voltage:
-    SCLK state 0: 700Mhz
-    SCLK state 1: 2539Mhz
-    MCLK state 0: 97Mhz
-    MCLK state 1: 1000MHz
-    VDD GFX Offset: 0mV
-    Maximum clocks & voltages:
-    SCLK clock 3150Mhz
-    MCLK clock 1200Mhz
-    Curent power cap: 130W
-Verifying user state values at /etc/default/amdgpu-custom-state.card0:
-    VDD GFX Offset: -75mV
-    Force performance level to manual
-    Force power cap to 99W
-Committing custom states to /sys/class/drm/card0/device/pp_od_clk_voltage:
-    Done
+Detecting the state values at /sys/class/drm/card1/device/pp_od_clk_voltage:
+  SCLK offset: 0Mhz
+  MCLK state 0: 97Mhz
+  MCLK state 1: 1259MHz
+  VDD GFX Offset: 0mV
+  Value ranges:
+    SCLK offset range:    -500Mhz       1000Mhz
+    MCLK clock range:      97Mhz       1500Mhz
+    VDDGFX offset range:    -200mv          0mv
+  Curent power cap: 304W
+
+Detecting the state values at /sys/class/drm/card1/device/gpu_od/fan_ctrl/fan_zero_rpm_enable:
+  Zero RPM enable: 1
+  Value ranges:
+    Zero RPM enable range: 0 1
+
+Detecting the state values at /sys/class/drm/card1/device/gpu_od/fan_ctrl/fan_zero_rpm_stop_temperature:
+  Zero RPM temperature: 50
+  Value ranges:
+    Zero RPM stop temperature range: 50 110
+
+Verifying user state values at /etc/default/amdgpu-custom-state.card1:
+  SCLK offset: 100MHz
+  VDD GFX Offset: -75mV
+  Force power cap to 250W
+  Zero RPM enable: 0
+  Zero RPM temperature: 65
+
+Committing custom states to /sys/class/drm/card1/device/pp_od_clk_voltage:
+  Done
 ```
 
 The script can also be invoked with specific custom state file prefix (can be
