@@ -177,7 +177,7 @@ function parse_states() {
     DETECTED_MCLK=("${MCLK[@]}")
     DETECTED_VDDC_CURVE=("${VDDC_CURVE[@]}")
     POWER_LIMIT=$(cat "$PWR_CAP_FILE")
-    echo "  Curent power cap: ${POWER_LIMIT%*000000}W"
+    echo "  Current power cap: ${POWER_LIMIT%*000000}W"
   fi
 }
 
@@ -252,7 +252,7 @@ function backup_states() {
       cat "${SYS_ZERO_RPM_STOP_TEMP}" >> "${BACKUP_STATE_FILE}"
     fi
 
-    echo "Writen initial backup states to ${BACKUP_STATE_FILE}"
+    echo "Written initial backup states to ${BACKUP_STATE_FILE}"
   else
     echo "Won't write initial state to ${BACKUP_STATE_FILE}, it already exists."
   fi
