@@ -225,13 +225,17 @@ function set_custom_states() {
   if [ "${FORCE_POWER_CAP}" ]; then
     echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
   fi
-  if [ "${ZERO_RPM_ENABLE}" ]; then
+  if [ -f "${SYS_ZERO_RPM_ENABLE}" ] && [ "${ZERO_RPM_ENABLE}" ]; then
     echo "${ZERO_RPM_ENABLE}" > "${SYS_ZERO_RPM_ENABLE}"
     echo "c" > "${SYS_ZERO_RPM_ENABLE}"
+  else
+	echo "Skipping ZERO_RPM_ENABLE: make sure to have Linux 6.13 or newer."
   fi
-  if [ "${ZERO_RPM_STOP_TEMP}" ]; then
+  if [ -f "${SYS_ZERO_RPM_STOP_TEMP}" ] && [ "${ZERO_RPM_STOP_TEMP}" ]; then
     echo "${ZERO_RPM_STOP_TEMP}" > "${SYS_ZERO_RPM_STOP_TEMP}"
     echo "c" > "${SYS_ZERO_RPM_STOP_TEMP}"
+  else
+	echo "Skipping FAN_ZERO_RPM_STOP_TEMPERATURE: make sure to have Linux 6.13 or newer."
   fi
 }
 
