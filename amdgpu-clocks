@@ -177,7 +177,7 @@ function parse_states() {
     DETECTED_MCLK=("${MCLK[@]}")
     DETECTED_VDDC_CURVE=("${VDDC_CURVE[@]}")
     POWER_LIMIT=$(cat "$PWR_CAP_FILE")
-    echo "  Curent power cap: ${POWER_LIMIT%*000000}W"
+    echo "  Current power cap: ${POWER_LIMIT%*000000}W"
   fi
 }
 
@@ -225,13 +225,17 @@ function set_custom_states() {
   if [ "${FORCE_POWER_CAP}" ]; then
     echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
   fi
-  if [ "${ZERO_RPM_ENABLE}" ]; then
+  if [ -f "${SYS_ZERO_RPM_ENABLE}" ] && [ "${ZERO_RPM_ENABLE}" ]; then
     echo "${ZERO_RPM_ENABLE}" > "${SYS_ZERO_RPM_ENABLE}"
     echo "c" > "${SYS_ZERO_RPM_ENABLE}"
+  else
+	echo "Skipping ZERO_RPM_ENABLE: make sure to have Linux 6.13 or newer."
   fi
-  if [ "${ZERO_RPM_STOP_TEMP}" ]; then
+  if [ -f "${SYS_ZERO_RPM_STOP_TEMP}" ] && [ "${ZERO_RPM_STOP_TEMP}" ]; then
     echo "${ZERO_RPM_STOP_TEMP}" > "${SYS_ZERO_RPM_STOP_TEMP}"
     echo "c" > "${SYS_ZERO_RPM_STOP_TEMP}"
+  else
+	echo "Skipping FAN_ZERO_RPM_STOP_TEMPERATURE: make sure to have Linux 6.13 or newer."
   fi
 }
 
@@ -252,7 +256,7 @@ function backup_states() {
       cat "${SYS_ZERO_RPM_STOP_TEMP}" >> "${BACKUP_STATE_FILE}"
     fi
 
-    echo "Writen initial backup states to ${BACKUP_STATE_FILE}"
+    echo "Written initial backup states to ${BACKUP_STATE_FILE}"
   else
     echo "Won't write initial state to ${BACKUP_STATE_FILE}, it already exists."
   fi

@@ -113,6 +113,8 @@ FORCE_POWER_PROFILE: 5
 `amdgpu-clocks` can read, store and set these values. Custom values are stored
 alongside other settings in `/etc/default/amdgpu-custom-state.cardX`.
 
+*Warning: Zero RPM fan mode is only available on Linux 6.13 or newer!*
+
 Example of custom power state file for RDNA3+ with Zero RPM settings:
 ```shell
 # exmaple settings
