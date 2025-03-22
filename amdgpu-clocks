@@ -7,24 +7,24 @@ SYS_PPFMASK=/sys/module/amdgpu/parameters/ppfeaturemask
 [[ $1 == "restore" ]] && RESTORE=true
 
 function check_ppfeaturemask() {
-  CURRENT_HEX_MASK=$(printf '%#x' "$(( $(cat ${SYS_PPFMASK}) ))")
+  CURRENT_HEX_MASK=$(printf '%#x' "$(( $(cat $SYS_PPFMASK) ))")
   # 0x4000 or 14th bit is one indicating if OverDrive has been enabled
   OVERDRIVE_MASK=$(printf '%#x' "$(( CURRENT_HEX_MASK & 0x4000 ))")
   [[ $OVERDRIVE_MASK == "0x4000" ]] && return 0
 
   WANTED_MASK=$(printf '%#x' "$(( CURRENT_HEX_MASK | 0x4000 ))")
   echo -n "In order to set custom amdgpu power states, enable OverDrive by "
-  echo -n "booting the machine with amdgpu.ppfeaturemask=${WANTED_MASK} "
+  echo -n "booting the machine with amdgpu.ppfeaturemask=$WANTED_MASK "
   echo    "kernel option" && exit 2
 }
 
 function fill_sclks() {
   if [[ -z $3 ]]; then       # Vega20 and later ASICs
-    echo "  SCLK state ${1}: ${2}"
-    SCLK[${1}]="s ${1} ${2%*M[Hh]z}"
+    echo "  SCLK state $1: $2"
+    SCLK[$1]="s $1 ${2%*M[Hh]z}"
   else                       # Vega10 and previous ASICs
-    echo "  SCLK state ${1}: ${2}, ${3}"
-    SCLK[${1}]="s ${1} ${2%*M[Hh]z} ${3%*mV}"
+    echo "  SCLK state $1: $2, $3"
+    SCLK[$1]="s $1 ${2%*M[Hh]z} ${3%*mV}"
   fi
 }
 
@@ -49,21 +49,21 @@ function fill_sclk_offset() {
 
 function fill_mclks() {
   if [[ -z $3 ]]; then       # Vega20 and later ASICs
-    echo "  MCLK state ${1}: ${2}"
-    MCLK[${1}]="m ${1} ${2%*M[Hh]z}"
+    echo "  MCLK state $1: $2"
+    MCLK[$1]="m $1 ${2%*M[Hh]z}"
   else                       # Vega10 and previous ASICs
-    echo "  MCLK state ${1}: ${2}, ${3}"
-    MCLK[${1}]="m ${1} ${2%*M[Hh]z} ${3%*mV}"
+    echo "  MCLK state $1: $2, $3"
+    MCLK[$1]="m $1 ${2%*M[Hh]z} ${3%*mV}"
   fi
 }
 
 function fill_vddccurve() {
   if [[ $# -eq 3 ]]; then
-    echo "  VDDC Curve state $1: ${2} ${3}"
-    VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${3%*mV}"
+    echo "  VDDC Curve state $1: $2 $3"
+    VDDC_CURVE[$1]="vc $1 ${2%*M[Hh]z} ${3%*mV}"
   elif [[ $# -eq 4 ]]; then
-    echo "  VDDC Curve state $1: ${2} @ ${4}"
-    VDDC_CURVE[${1}]="vc ${1} ${2%*M[Hh]z} ${4%*mV}"
+    echo "  VDDC Curve state $1: $2 @ $4"
+    VDDC_CURVE[$1]="vc $1 ${2%*M[Hh]z} ${4%*mV}"
   else
     echo "ERROR: Can't parse '$*', did pp_od_clk_voltage API change again?"
     exit 2
@@ -92,7 +92,7 @@ function parse_states() {
   mapfile -t STATE_LINES < <(tr -d '\000' < "$1")
   for LNNO in "${!STATE_LINES[@]}"; do
     LINE="${STATE_LINES[$LNNO]}"
-    case ${LINE} in
+    case $LINE in
       "OD_SCLK:")
         state_fill_func=fill_sclks ;;
       "OD_SCLK_OFFSET:")
@@ -181,7 +181,7 @@ function parse_states() {
       "#"*) ;;
       "") ;;
       *)
-        echo "  Unexpected value in ${1}:$((LNNO + 1))"
+        echo "  Unexpected value in $1:$((LNNO + 1))"
         exit 2
         ;;
     esac
@@ -197,20 +197,20 @@ function parse_states() {
 
 function set_custom_states() {
   if [[ $RESTORE == "true" && $FORCE_LEVEL == "auto" ]]; then
-    echo manual > "${PWR_LEVEL}"
+    echo manual > "$PWR_LEVEL"
     sleep 0.25
-    echo 0 > "${SYS_DPM_SCLK}" 2>&1
-    echo 0 > "${SYS_DPM_MCLK}" 2>&1
+    echo 0 > "$SYS_DPM_SCLK" 2>&1
+    echo 0 > "$SYS_DPM_MCLK" 2>&1
     sleep 0.25
   fi
 
   # clocks
   for CSTATE in "${SCLK[@]}"; do
     [[ -z $CSTATE ]] && continue
-    echo "${CSTATE}" > "${SYS_PP_OD_CLK}"
+    echo "$CSTATE" > "$SYS_PP_OD_CLK"
   done
   if [[ -n $SCLK_OFFSET ]]; then
-    echo "${SCLK_OFFSET}" > "${SYS_PP_OD_CLK}"
+    echo "$SCLK_OFFSET" > "$SYS_PP_OD_CLK"
   fi
 
 
@@ -219,8 +219,8 @@ function set_custom_states() {
     OLD_MSTATE=${DETECTED_MCLK[$((${MSTATE:3:1}))]}
 
     if [[ $MSTATE != "$OLD_MSTATE" ]]; then
-      echo "${MSTATE}" > "${SYS_PP_OD_CLK}" ||
-        echo "ERROR: echo ${MSTATE} > ${SYS_PP_OD_CLK}"
+      echo "$MSTATE" > "$SYS_PP_OD_CLK" ||
+        echo "ERROR: echo $MSTATE > $SYS_PP_OD_CLK"
     fi
   done
 
@@ -229,39 +229,39 @@ function set_custom_states() {
     OLD_CURVE_STATE=${DETECTED_VDDC_CURVE[$((${VDDC_CURVE_STATE:3:1}))]}
 
     if [[ $VDDC_CURVE_STATE != "$OLD_CURVE_STATE" ]]; then
-      echo "${VDDC_CURVE_STATE}" > "${SYS_PP_OD_CLK}" ||
-        echo "ERROR: echo ${VDDC_CURVE_STATE} > ${SYS_PP_OD_CLK}"
+      echo "$VDDC_CURVE_STATE" > "$SYS_PP_OD_CLK" ||
+        echo "ERROR: echo $VDDC_CURVE_STATE > $SYS_PP_OD_CLK"
     fi
   done
 
   if [[ $VDDGFX_OFFSET ]]; then
-    echo "${VDDGFX_OFFSET}" > "${SYS_PP_OD_CLK}"
+    echo "$VDDGFX_OFFSET" > "$SYS_PP_OD_CLK"
   fi
-  echo 'c' > "${SYS_PP_OD_CLK}"
+  echo 'c' > "$SYS_PP_OD_CLK"
   if [[ $FORCE_LEVEL ]]; then
-    echo ${FORCE_LEVEL} > ${PWR_LEVEL}
+    echo $FORCE_LEVEL > $PWR_LEVEL
   fi
   if [[ $FORCE_PROFILE ]]; then
-    echo ${FORCE_PROFILE} > ${PWR_PROFILE}
+    echo $FORCE_PROFILE > $PWR_PROFILE
   fi
   if [[ $FORCE_SCLK ]]; then
-    echo "${FORCE_SCLK}" > "${SYS_DPM_SCLK}"
+    echo "$FORCE_SCLK" > "$SYS_DPM_SCLK"
   fi
   if [[ $FORCE_MCLK ]]; then
-    echo "${FORCE_MCLK}" > "${SYS_DPM_MCLK}"
+    echo "$FORCE_MCLK" > "$SYS_DPM_MCLK"
   fi
   if [[ $FORCE_POWER_CAP ]]; then
-    echo "${FORCE_POWER_CAP}" > "${PWR_CAP_FILE}"
+    echo "$FORCE_POWER_CAP" > "$PWR_CAP_FILE"
   fi
   if [[ -f $SYS_ZERO_RPM_ENABLE && -n $ZERO_RPM_ENABLE ]]; then
-    echo "${ZERO_RPM_ENABLE}" > "${SYS_ZERO_RPM_ENABLE}"
-    echo "c" > "${SYS_ZERO_RPM_ENABLE}"
+    echo "$ZERO_RPM_ENABLE" > "$SYS_ZERO_RPM_ENABLE"
+    echo "c" > "$SYS_ZERO_RPM_ENABLE"
   else
 	echo "Skipping ZERO_RPM_ENABLE: make sure to have Linux 6.13 or newer."
   fi
   if [[ -f $SYS_ZERO_RPM_STOP_TEMP && -n $ZERO_RPM_STOP_TEMP ]]; then
-    echo "${ZERO_RPM_STOP_TEMP}" > "${SYS_ZERO_RPM_STOP_TEMP}"
-    echo "c" > "${SYS_ZERO_RPM_STOP_TEMP}"
+    echo "$ZERO_RPM_STOP_TEMP" > "$SYS_ZERO_RPM_STOP_TEMP"
+    echo "c" > "$SYS_ZERO_RPM_STOP_TEMP"
   else
 	echo "Skipping FAN_ZERO_RPM_STOP_TEMPERATURE: make sure to have Linux 6.13 or newer."
   fi
@@ -269,33 +269,33 @@ function set_custom_states() {
 
 function backup_states() {
   if [[ ! -r $BACKUP_STATE_FILE ]]; then
-    cp "${SYS_PP_OD_CLK}" "${BACKUP_STATE_FILE}"
+    cp "$SYS_PP_OD_CLK" "$BACKUP_STATE_FILE"
     if [[ $PWR_LEVEL == "manual" ]]; then
-      echo "FORCE_POWER_PROFILE: 0" >> "${BACKUP_STATE_FILE}"
+      echo "FORCE_POWER_PROFILE: 0" >> "$BACKUP_STATE_FILE"
     fi
-    echo "FORCE_PERF_LEVEL: $(cat "${PWR_LEVEL}")" >> "${BACKUP_STATE_FILE}"
-    echo "FORCE_POWER_CAP: $(cat "${PWR_CAP_FILE}")" >> "${BACKUP_STATE_FILE}"
+    echo "FORCE_PERF_LEVEL: $(cat "$PWR_LEVEL")" >> "$BACKUP_STATE_FILE"
+    echo "FORCE_POWER_CAP: $(cat "$PWR_CAP_FILE")" >> "$BACKUP_STATE_FILE"
 
     # Zero RPM
     if [[ -r  $SYS_ZERO_RPM_ENABLE ]]; then
-      cat "${SYS_ZERO_RPM_ENABLE}" >> "${BACKUP_STATE_FILE}"
+      cat "$SYS_ZERO_RPM_ENABLE" >> "$BACKUP_STATE_FILE"
     fi
     if [[ -r  $SYS_ZERO_RPM_STOP_TEMP ]]; then
-      cat "${SYS_ZERO_RPM_STOP_TEMP}" >> "${BACKUP_STATE_FILE}"
+      cat "$SYS_ZERO_RPM_STOP_TEMP" >> "$BACKUP_STATE_FILE"
     fi
 
-    echo "Written initial backup states to ${BACKUP_STATE_FILE}"
+    echo "Written initial backup states to $BACKUP_STATE_FILE"
   else
-    echo "Won't write initial state to ${BACKUP_STATE_FILE}, it already exists."
+    echo "Won't write initial state to $BACKUP_STATE_FILE, it already exists."
   fi
 }
 
 function restore_states() {
   if [[ -f $BACKUP_STATE_FILE ]]; then
-    echo "Restoring all states to the initial defaults from ${BACKUP_STATE_FILE}"
-    USER_STATE_FILE=${BACKUP_STATE_FILE}
+    echo "Restoring all states to the initial defaults from $BACKUP_STATE_FILE"
+    USER_STATE_FILE=$BACKUP_STATE_FILE
   else
-    echo "Cant't access initial defaults at ${BACKUP_STATE_FILE}, aborting."
+    echo "Cant't access initial defaults at $BACKUP_STATE_FILE, aborting."
     exit 2
   fi
 }
@@ -309,32 +309,32 @@ function clear_vars() {
 check_ppfeaturemask
 
 shopt -s extglob
-for USER_STATE_FILE in ${USER_STATES_PATH}*.+(card?|card??|pci:????:??:??.?); do
+for USER_STATE_FILE in $USER_STATES_PATH*.+(card?|card??|pci:????:??:??.?); do
   BACKUP_STATE_FILE=/tmp/${USER_STATE_FILE##*/}.initial
-  if [[ "${USER_STATE_FILE}" == *"pci"* ]]; then
+  if [[ "$USER_STATE_FILE" == *"pci"* ]]; then
     STATE_PCIDEV=${USER_STATE_FILE#*.}
     for CARD in /sys/class/drm/card{?,??}; do
       LINK=$(readlink $CARD)
       if [[ -n $LINK ]]; then
         CARD_PCDEV=${LINK%*/drm/card*}
         if [[ "${CARD_PCDEV##*/}" == "${STATE_PCIDEV#*:}" ]]; then
-          sys_device="${CARD}"/device
+          sys_device="$CARD"/device
         fi
       fi
     done
   else
     sys_device=/sys/class/drm/${USER_STATE_FILE##*.}/device
   fi
-  sys_hwmons=( "${sys_device}"/hwmon/hwmon[0-9] )
+  sys_hwmons=( "$sys_device"/hwmon/hwmon[0-9] )
 
-  SYS_PP_OD_CLK=${sys_device}/pp_od_clk_voltage
-  PWR_LEVEL=${sys_device}/power_dpm_force_performance_level
-  PWR_PROFILE=${sys_device}/pp_power_profile_mode
-  SYS_DPM_SCLK=${sys_device}/pp_dpm_sclk
-  SYS_DPM_MCLK=${sys_device}/pp_dpm_mclk
+  SYS_PP_OD_CLK=$sys_device/pp_od_clk_voltage
+  PWR_LEVEL=$sys_device/power_dpm_force_performance_level
+  PWR_PROFILE=$sys_device/pp_power_profile_mode
+  SYS_DPM_SCLK=$sys_device/pp_dpm_sclk
+  SYS_DPM_MCLK=$sys_device/pp_dpm_mclk
   PWR_CAP_FILE=${sys_hwmons[0]}/power1_cap
-  SYS_ZERO_RPM_ENABLE=${sys_device}/gpu_od/fan_ctrl/fan_zero_rpm_enable
-  SYS_ZERO_RPM_STOP_TEMP=${sys_device}/gpu_od/fan_ctrl/fan_zero_rpm_stop_temperature
+  SYS_ZERO_RPM_ENABLE=$sys_device/gpu_od/fan_ctrl/fan_zero_rpm_enable
+  SYS_ZERO_RPM_STOP_TEMP=$sys_device/gpu_od/fan_ctrl/fan_zero_rpm_stop_temperature
 
   if [[ -f $SYS_PP_OD_CLK ]]; then
     if [[ $RESTORE == "true" ]]; then
@@ -343,30 +343,30 @@ for USER_STATE_FILE in ${USER_STATES_PATH}*.+(card?|card??|pci:????:??:??.?); do
       backup_states
     fi
     echo ""
-    echo "Detecting the state values at ${SYS_PP_OD_CLK}:"
-    parse_states "${SYS_PP_OD_CLK}"
+    echo "Detecting the state values at $SYS_PP_OD_CLK:"
+    parse_states "$SYS_PP_OD_CLK"
 
     if [[ -r $SYS_ZERO_RPM_ENABLE ]]; then
       echo ""
-      echo "Detecting the state values at ${SYS_ZERO_RPM_ENABLE}:"
-      parse_states "${SYS_ZERO_RPM_ENABLE}"
+      echo "Detecting the state values at $SYS_ZERO_RPM_ENABLE:"
+      parse_states "$SYS_ZERO_RPM_ENABLE"
     fi
     if [[ -r $SYS_ZERO_RPM_STOP_TEMP ]]; then
       echo ""
-      echo "Detecting the state values at ${SYS_ZERO_RPM_STOP_TEMP}:"
-      parse_states "${SYS_ZERO_RPM_STOP_TEMP}"
+      echo "Detecting the state values at $SYS_ZERO_RPM_STOP_TEMP:"
+      parse_states "$SYS_ZERO_RPM_STOP_TEMP"
     fi
 
     echo ""
-    echo "Verifying user state values at ${USER_STATE_FILE}:"
-    parse_states "${USER_STATE_FILE}"
+    echo "Verifying user state values at $USER_STATE_FILE:"
+    parse_states "$USER_STATE_FILE"
 
     echo ""
-    echo "Committing custom states to ${SYS_PP_OD_CLK}:"
+    echo "Committing custom states to $SYS_PP_OD_CLK:"
     set_custom_states
     echo "  Done"
     clear_vars
   else
-    echo "WARNING: ${SYS_PP_OD_CLK} does not exist, skipping!"
+    echo "WARNING: $SYS_PP_OD_CLK does not exist, skipping!"
   fi
 done
