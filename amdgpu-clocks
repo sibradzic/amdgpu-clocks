@@ -7,7 +7,7 @@ SYS_PPFMASK=/sys/module/amdgpu/parameters/ppfeaturemask
 [[ $1 == "restore" ]] && RESTORE=true
 
 function check_ppfeaturemask() {
-  CURRENT_HEX_MASK=$(printf '%#x' "$(( $(cat $SYS_PPFMASK) ))")
+  CURRENT_HEX_MASK=$(printf '%#x' "$(( $(cat "$SYS_PPFMASK") ))")
   # 0x4000 or 14th bit is one indicating if OverDrive has been enabled
   OVERDRIVE_MASK=$(printf '%#x' "$(( CURRENT_HEX_MASK & 0x4000 ))")
   [[ $OVERDRIVE_MASK == "0x4000" ]] && return 0
@@ -33,13 +33,13 @@ function fill_sclk_offset() {
 
   if [[ $1 =~ M[Hh]z ]]; then
     [[ -z $SCLK_OFFSET_METHOD ]] && SCLK_OFFSET_METHOD="proper"
-    offset_value="$1"
+    offset_value=$1
   else
     # Legacy method for Linux < 6.14
     # Modyfing [0] index is unsupported
     [[ -z $SCLK_OFFSET_METHOD ]] && SCLK_OFFSET_METHOD="legacy"
     [[ $1 != "1" ]] && return
-    offset_value="$2"
+    offset_value=$2
   fi
 
   echo "  SCLK offset: $offset_value"
@@ -78,11 +78,11 @@ function fill_vddgfx_offset() {
 function fill_zero_rpm() {
   if [[ $1 == "enable" ]]; then
     echo "  Zero RPM enable: $2"
-    ZERO_RPM_ENABLE="$2"
+    ZERO_RPM_ENABLE=$2
   fi
   if [[ $1 == "temperature" ]]; then
     echo "  Zero RPM temperature: $2"
-    ZERO_RPM_STOP_TEMP="$2"
+    ZERO_RPM_STOP_TEMP=$2
   fi
 }
 
@@ -91,7 +91,7 @@ function parse_states() {
 
   mapfile -t STATE_LINES < <(tr -d '\000' < "$1")
   for LNNO in "${!STATE_LINES[@]}"; do
-    LINE="${STATE_LINES[$LNNO]}"
+    LINE=${STATE_LINES[$LNNO]}
     case $LINE in
       "OD_SCLK:")
         state_fill_func=fill_sclks ;;
@@ -134,16 +134,16 @@ function parse_states() {
         MAX_VDDC=${MAX_VDDC%*mV}
         ;;
       [0-9]": "*)
-        $state_fill_func ${LINE%%:*} ${LINE#* }
+        $state_fill_func "${LINE%%:*}" "${LINE#* }"
         ;;
       [-0-9]*"M"[Hh]"z")
-        $state_fill_func ${LINE%%:*} ${LINE#* }
+        $state_fill_func "${LINE%%:*}" "${LINE#* }"
         ;;
       [-0-9]*"mV")
-        $offset_fill_func ${LINE%%:*} ${LINE#* }
+        $offset_fill_func "${LINE%%:*}" "${LINE#* }"
         ;;
       [0-9]*)
-        $state_fill_func ${zero_rpm_setting} ${LINE%%:*} ${LINE#* }
+        $state_fill_func ${zero_rpm_setting} "${LINE%%:*}" "${LINE#* }"
         ;;
       "FORCE_SCLK: "[0-9]*)
         echo "  Force SCLK state to ${LINE#* }"
@@ -239,10 +239,10 @@ function set_custom_states() {
   fi
   echo 'c' > "$SYS_PP_OD_CLK"
   if [[ $FORCE_LEVEL ]]; then
-    echo $FORCE_LEVEL > $PWR_LEVEL
+    echo "$FORCE_LEVEL" > "$PWR_LEVEL"
   fi
   if [[ $FORCE_PROFILE ]]; then
-    echo $FORCE_PROFILE > $PWR_PROFILE
+    echo "$FORCE_PROFILE" > "$PWR_PROFILE"
   fi
   if [[ $FORCE_SCLK ]]; then
     echo "$FORCE_SCLK" > "$SYS_DPM_SCLK"
@@ -309,21 +309,21 @@ function clear_vars() {
 check_ppfeaturemask
 
 shopt -s extglob
-for USER_STATE_FILE in $USER_STATES_PATH*.+(card?|card??|pci:????:??:??.?); do
+for USER_STATE_FILE in "$USER_STATES_PATH"*.+(card?|card??|pci:????:??:??.?); do
   BACKUP_STATE_FILE=/tmp/${USER_STATE_FILE##*/}.initial
-  if [[ "$USER_STATE_FILE" == *"pci"* ]]; then
+  if [[ $USER_STATE_FILE == *"pci"* ]]; then
     STATE_PCIDEV=${USER_STATE_FILE#*.}
     for CARD in /sys/class/drm/card{?,??}; do
-      LINK=$(readlink $CARD)
+      LINK=$(readlink "$CARD")
       if [[ -n $LINK ]]; then
         CARD_PCDEV=${LINK%*/drm/card*}
-        if [[ "${CARD_PCDEV##*/}" == "${STATE_PCIDEV#*:}" ]]; then
-          sys_device="$CARD"/device
+        if [[ ${CARD_PCDEV##*/} == "${STATE_PCIDEV#*:}" ]]; then
+          sys_device="$CARD/device"
         fi
       fi
     done
   else
-    sys_device=/sys/class/drm/${USER_STATE_FILE##*.}/device
+    sys_device="/sys/class/drm/${USER_STATE_FILE##*.}/device"
   fi
   sys_hwmons=( "$sys_device"/hwmon/hwmon[0-9] )
 
