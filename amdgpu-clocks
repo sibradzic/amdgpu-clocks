@@ -94,89 +94,111 @@ function parse_states() {
     case $LINE in
       "OD_SCLK:")
         state_fill_func=fill_sclks ;;
+
       "OD_SCLK_OFFSET:")
         state_fill_func=fill_sclk_offset ;;
+
       "OD_MCLK:")
         state_fill_func=fill_mclks ;;
+
       "OD_VDDC_CURVE:")
         state_fill_func=fill_vddccurve ;;
+
       "VDDC_CURVE_SCLK["[012]"]: "*)
         ;; # Just ignoring these for now
+
       "VDDC_CURVE_VOLT["[012]"]: "*)
         ;; # Just ignoring these for now
+
       "OD_VDDGFX_OFFSET:")
         offset_fill_func=fill_vddgfx_offset ;;
+
       "OD_RANGE:")
         echo "  Value ranges:";;
+
       "SCLK: "*)
         echo "    SCLK clock range: ${LINE#* }"
         MAX_SCLK=${LINE##* }
         MAX_SCLK=${MAX_SCLK%*M[Hh]z}
         ;;
+
       "SCLK_OFFSET:"*)
         echo "    SCLK offset range: ${LINE#* }"
         MAX_SCLK_OFFSET=${LINE##* }
         MAX_SCLK_OFFSET=${MAX_SCLK%*M[Hh]z}
         ;;
+
       "MCLK: "*)
         echo "    MCLK clock range: ${LINE#* }"
         MAX_MCLK=${LINE##* }
         MAX_MCLK=${MAX_MCLK%*M[Hh]z}
         ;;
+
       "VDDGFX_OFFSET: "*)
         echo "    VDDGFX offset range: ${LINE#*: }"
         VOLTAGE_OFFSET_RANGE=${LINE#*: }
         ;;
+
       "VDDC: "*)
         echo "    VDDC voltage ${LINE##* }"
         MAX_VDDC=${LINE##* }
         MAX_VDDC=${MAX_VDDC%*mV}
         ;;
+
       [0-9]": "*)
-        $state_fill_func "${LINE%%:*}" "${LINE#* }"
-        ;;
+        $state_fill_func "${LINE%%:*}" "${LINE#* }" ;;
+
       [-0-9]*"M"[Hh]"z")
-        $state_fill_func "${LINE%%:*}" "${LINE#* }"
-        ;;
+        $state_fill_func "${LINE%%:*}" "${LINE#* }" ;;
+
       [-0-9]*"mV")
-        $offset_fill_func "${LINE%%:*}" "${LINE#* }"
-        ;;
+        $offset_fill_func "${LINE%%:*}" "${LINE#* }" ;;
+
       [0-9]*)
-        $state_fill_func ${zero_rpm_setting} "${LINE%%:*}" "${LINE#* }"
-        ;;
+        $state_fill_func ${zero_rpm_setting} "${LINE%%:*}" "${LINE#* }" ;;
+
       "FORCE_SCLK: "[0-9]*)
         echo "  Force SCLK state to ${LINE#* }"
         FORCE_SCLK=${LINE#* }
         ;;
+
       "FORCE_MCLK: "[0-9]*)
         echo "  Force MCLK state to ${LINE#* }"
         FORCE_MCLK=${LINE#* }
         ;;
+
       "FORCE_POWER_CAP: "[0-9]*)
         MICROWATTS=${LINE#* }
         echo "  Force power cap to ${MICROWATTS%*000000}W"
         FORCE_POWER_CAP=${LINE#* }
         ;;
+
       "FORCE_PERF_LEVEL: "[a-z]*)
         echo "  Force performance level to ${LINE#* }"
         FORCE_LEVEL=${LINE#* }
         ;;
+
       "FORCE_POWER_PROFILE: "[0-9]*)
         echo "  Force power profile to ${LINE#* }"
         FORCE_PROFILE=${LINE#* }
         ;;
+
       "FAN_ZERO_RPM_ENABLE:")
         state_fill_func=fill_zero_rpm
         zero_rpm_setting="enable"
         ;;
+
       "FAN_ZERO_RPM_STOP_TEMPERATURE:")
         state_fill_func=fill_zero_rpm
         zero_rpm_setting="temperature"
         ;;
+
       "ZERO_RPM_ENABLE: "*)
         echo "    Zero RPM enable range: ${LINE#*: }" ;;
+
       "ZERO_RPM_STOP_TEMPERATURE: "*)
         echo "    Zero RPM stop temperature range: ${LINE#*: }" ;;
+
       "#"*) ;;
       "") ;;
       *)
