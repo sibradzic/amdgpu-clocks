@@ -30,11 +30,22 @@ function fill_sclks() {
 }
 
 function fill_sclk_offset() {
-  echo "  SCLK offset ${1}: ${2}"
+  local offset_value
 
-  # For now, modyfing the [0] index is unsupported on RDNA4
-  if [[ $1 == "0" ]]; then return; fi
-  SCLK[${1}]="s ${1} ${2%*M[Hh]z}"
+  if [[ $1 =~ M[Hh]z ]]; then
+    [[ -z $SCLK_OFFSET_METHOD ]] && SCLK_OFFSET_METHOD="proper"
+    offset_value="$1"
+  else
+    # Legacy method for Linux < 6.14
+    # Modyfing [0] index is unsupported
+    [[ -z $SCLK_OFFSET_METHOD ]] && SCLK_OFFSET_METHOD="legacy"
+    [[ $1 != "1" ]] && return
+    offset_value="$2"
+  fi
+
+  echo "  SCLK offset: $offset_value"
+  SCLK_OFFSET="s ${offset_value%*M[Hh]z}"
+  [[ $SCLK_OFFSET_METHOD == "legacy" ]] && SCLK_OFFSET="s 1 ${offset_value%*M[Hh]z}"
 }
 
 function fill_mclks() {
@@ -100,23 +111,23 @@ function parse_states() {
       "OD_RANGE:")
         echo "  Value ranges:";;
       "SCLK: "*)
-        echo "    SCLK clock ${LINE##* }"
+        echo "    SCLK clock range: ${LINE#* }"
         MAX_SCLK=${LINE##* }
         MAX_SCLK=${MAX_SCLK%*M[Hh]z}
         ;;
       "SCLK_OFFSET:"*)
-        echo "    SCLK offset ${LINE##* }"
-        MAX_SCLK=${LINE##* }
-        MAX_SCLK=${MAX_SCLK%*M[Hh]z}
+        echo "    SCLK offset range: ${LINE#* }"
+        MAX_SCLK_OFFSET=${LINE##* }
+        MAX_SCLK_OFFSET=${MAX_SCLK%*M[Hh]z}
         ;;
       "MCLK: "*)
-        echo "    MCLK clock ${LINE##* }"
+        echo "    MCLK clock range: ${LINE#* }"
         MAX_MCLK=${LINE##* }
         MAX_MCLK=${MAX_MCLK%*M[Hh]z}
         ;;
       "VDDGFX_OFFSET: "*)
         echo "    VDDGFX offset range: ${LINE#*: }"
-        OFFSET_RANGE=${LINE#*: }
+        VOLTAGE_OFFSET_RANGE=${LINE#*: }
         ;;
       "VDDC: "*)
         echo "    VDDC voltage ${LINE##* }"
@@ -124,6 +135,9 @@ function parse_states() {
         MAX_VDDC=${MAX_VDDC%*mV}
         ;;
       [0-9]": "*)
+        $state_fill_func ${LINE%%:*} ${LINE#* }
+        ;;
+      [-0-9]*"M"[Hh]"z")
         $state_fill_func ${LINE%%:*} ${LINE#* }
         ;;
       [-0-9]*"mV")
@@ -190,8 +204,12 @@ function set_custom_states() {
     sleep 0.25
   fi
   for CSTATE in "${SCLK[@]}"; do
+    [[ -z $CSTATE ]] && continue
     echo "${CSTATE}" > "${SYS_PP_OD_CLK}"
   done
+  if [ "${SCLK_OFFSET}" ]; then
+    echo "${SCLK_OFFSET}" > "${SYS_PP_OD_CLK}"
+  fi
   for MSTATE in "${MCLK[@]}"; do
     OLD_MSTATE=${DETECTED_MCLK[$((${MSTATE:3:1}))]}
     if [ "${MSTATE}" != "${OLD_MSTATE}" ]; then
@@ -273,9 +291,9 @@ function restore_states() {
 }
 
 function clear_vars() {
-    unset SCLK MCLK
-    unset VDDC_CURVE VDDGFX_OFFSET
-    unset sys_device sys_hwmons
+  unset SCLK MCLK SCLK_OFFSET SCLK_OFFSET_METHOD
+  unset VDDC_CURVE VDDGFX_OFFSET
+  unset sys_device sys_hwmons
 }
 
 check_ppfeaturemask
