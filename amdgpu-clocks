@@ -240,12 +240,14 @@ function set_custom_states() {
     sleep 0.25
   fi
 
-  # reset first
-  echo "  Resetting to dafault HW values"
-  echo 'r' > "$SYS_PP_OD_CLK"
-  sleep 0.1
+  # power level/profile/cap settings
+  [[ -n $FORCE_LEVEL     ]] && echo "$FORCE_LEVEL"     > "$PWR_LEVEL"
+  [[ -n $FORCE_PROFILE   ]] && echo "$FORCE_PROFILE"   > "$PWR_PROFILE"
+  [[ -n $FORCE_POWER_CAP ]] && echo "$FORCE_POWER_CAP" > "$PWR_CAP_FILE"
+  [[ -n $FORCE_SCLK      ]] && echo "$FORCE_SCLK"      > "$SYS_DPM_SCLK"
+  [[ -n $FORCE_MCLK      ]] && echo "$FORCE_MCLK"      > "$SYS_DPM_MCLK"
 
-  # clocks
+  # gpu clocks
   for CSTATE in "${SCLK[@]}"; do
     [[ -z $CSTATE ]] && continue
     echo "$CSTATE" > "$SYS_PP_OD_CLK"
@@ -276,22 +278,10 @@ function set_custom_states() {
   # voltage offset
   [[ -n $VDDGFX_OFFSET ]] && echo "$VDDGFX_OFFSET" > "$SYS_PP_OD_CLK"
 
-  # power settings
-  [[ -n $FORCE_LEVEL     ]] && echo "$FORCE_LEVEL"     > "$PWR_LEVEL"
-  [[ -n $FORCE_PROFILE   ]] && echo "$FORCE_PROFILE"   > "$PWR_PROFILE"
-  [[ -n $FORCE_SCLK      ]] && echo "$FORCE_SCLK"      > "$SYS_DPM_SCLK"
-  [[ -n $FORCE_MCLK      ]] && echo "$FORCE_MCLK"      > "$SYS_DPM_MCLK"
-  [[ -n $FORCE_POWER_CAP ]] && echo "$FORCE_POWER_CAP" > "$PWR_CAP_FILE"
-
-  # commit changes
-  echo "  Commiting custom states"
-  echo 'c' > "$SYS_PP_OD_CLK"
-
-  # zero rpm
+  # zero RPM
   if [[ -n $ZERO_RPM_ENABLE ]]; then
     if [[ -f $SYS_ZERO_RPM_ENABLE ]]; then
       echo "$ZERO_RPM_ENABLE" > "$SYS_ZERO_RPM_ENABLE"
-      echo 'c' > "$SYS_ZERO_RPM_ENABLE"
    else
       echo "Skipping ZERO_RPM_ENABLE: make sure to have Linux 6.13 or newer."
     fi
@@ -299,11 +289,13 @@ function set_custom_states() {
   if [[ -n $ZERO_RPM_STOP_TEMP ]]; then
     if [[ -f $SYS_ZERO_RPM_STOP_TEMP ]]; then
       echo "$ZERO_RPM_STOP_TEMP" > "$SYS_ZERO_RPM_STOP_TEMP"
-      echo 'c' > "$SYS_ZERO_RPM_STOP_TEMP"
     else
       echo "Skipping FAN_ZERO_RPM_STOP_TEMPERATURE: make sure to have Linux 6.13 or newer."
     fi
   fi
+
+  # commit changes (this should cover fan changes as well)
+  echo 'c' > "$SYS_PP_OD_CLK"
 }
 
 function backup_states() {
