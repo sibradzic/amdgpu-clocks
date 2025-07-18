@@ -151,8 +151,8 @@ function parse_states() {
         MAX_VDDC=${MAX_VDDC%*mV}
         ;;
 
-      [0-9]": "*)
-        $state_fill_func ${LINE%%:*} ${LINE#* }
+      [0-9]*":"[[:space:]]*)
+        $state_fill_func ${LINE%%:*} ${LINE#*:}
         ;;
 
       [-0-9]*"M"[Hh]"z")
