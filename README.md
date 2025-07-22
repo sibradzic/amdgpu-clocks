@@ -40,7 +40,7 @@ one can alternatively define the custom state using
 `<domain>:<bus>:<dev>.<function>` numbers. For example
 `/etc/default/amdgpu-custom-state.pci:0000:03:00.0`.
 
-### Custom State Files
+### Custom Power State Files
 
 > [!Important]
 > Please use only spaces in your custom power state file! Tabs and other characters might not be read correctly.
