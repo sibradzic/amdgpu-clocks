@@ -91,7 +91,7 @@ function parse_states() {
   mapfile -t STATE_LINES < <(tr -d '\000' < "$1")
   for LNNO in "${!STATE_LINES[@]}"; do
     LINE=${STATE_LINES[$LNNO]}
-    case $LINE in
+    case "$LINE" in
       "OD_SCLK:")
         state_fill_func=fill_sclks
         ;;
@@ -151,20 +151,21 @@ function parse_states() {
         MAX_VDDC=${MAX_VDDC%*mV}
         ;;
 
-      [0-9]": "*)
+      [0-9]*:[[:space:]]*)
+        $state_fill_func ${LINE%%:*} ${LINE#*:}
+        ;;
+
+      [-0-9]*M[Hh]z)
         $state_fill_func ${LINE%%:*} ${LINE#* }
         ;;
 
-      [-0-9]*"M"[Hh]"z")
-        $state_fill_func ${LINE%%:*} ${LINE#* }
-        ;;
-
-      [-0-9]*"mV")
+      [-0-9]*mV)
         $offset_fill_func ${LINE%%:*} ${LINE#* }
         ;;
 
       [0-9]*)
-        $state_fill_func ${zero_rpm_setting} "${LINE%%:*}" "${LINE#* }" ;;
+        $state_fill_func ${zero_rpm_setting} "${LINE%%:*}" "${LINE#* }"
+        ;;
 
       "FORCE_SCLK: "[0-9]*)
         echo "  Force SCLK state to ${LINE#* }"
